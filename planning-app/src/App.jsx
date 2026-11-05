@@ -59,6 +59,7 @@ function App() {
   ];
 
   const [pagina, setPagina] = useState("dashboard");
+  const [bestand, setBestand] = useState(null);
 
   const bepaalPrioriteit = (leverdatum) => {
     const vandaag = new Date();
@@ -80,9 +81,7 @@ function App() {
       (a) => a.artikelnummer === artikelnummer
     );
 
-    if (!artikel) {
-      return 0;
-    }
+    if (!artikel) return 0;
 
     return artikel.voorraad - artikel.reserveringen;
   };
@@ -95,6 +94,16 @@ function App() {
 
   const achterstalligeOrders = orders.filter(
     (o) => bepaalPrioriteit(o.leverdatum) === "Achterstallig"
+  ).length;
+
+  const negatieveVoorraad = voorraadArtikelen.filter(
+    (a) => a.voorraad - a.reserveringen < 0
+  ).length;
+
+  const onderMinimum = voorraadArtikelen.filter(
+    (a) =>
+      a.voorraad - a.reserveringen >= 0 &&
+      a.voorraad - a.reserveringen < a.minimum
   ).length;
 
   return (
@@ -148,6 +157,13 @@ function App() {
         >
           Productieplanning
         </p>
+
+        <p
+          style={{ cursor: "pointer" }}
+          onClick={() => setPagina("import")}
+        >
+          Importeren
+        </p>
       </div>
 
       <div
@@ -161,16 +177,17 @@ function App() {
           {pagina === "orders" && "Orders"}
           {pagina === "voorraad" && "Voorraad"}
           {pagina === "planning" && "Productieplanning"}
+          {pagina === "import" && "Importeren"}
         </h1>
 
-        {(pagina === "dashboard" || pagina === "orders") && (
+        {pagina === "dashboard" && (
           <>
             <div
               style={{
                 display: "flex",
                 gap: "20px",
-                marginBottom: "30px",
                 flexWrap: "wrap",
+                marginBottom: "30px",
               }}
             >
               <div style={kaartStyle}>
@@ -187,28 +204,37 @@ function App() {
                 <h3>Achterstallige Orders</h3>
                 <p>{achterstalligeOrders}</p>
               </div>
-            </div>
 
+              <div style={kaartStyle}>
+                <h3>Negatieve Voorraad</h3>
+                <p>{negatieveVoorraad}</p>
+              </div>
+
+              <div style={kaartStyle}>
+                <h3>Onder Minimum</h3>
+                <p>{onderMinimum}</p>
+              </div>
+            </div>
+          </>
+        )}
+
+        {pagina === "orders" && (
+          <>
             <h2>Orderoverzicht</h2>
 
             <div style={{ overflowX: "auto" }}>
-              <table
-                style={{
-                  width: "100%",
-                  borderCollapse: "collapse",
-                }}
-              >
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr>
                     <th style={thStyle}>Ordernummer</th>
                     <th style={thStyle}>Klant</th>
-                    <th style={thStyle}>Artikelnummer</th>
+                    <th style={thStyle}>Artikel</th>
                     <th style={thStyle}>Omschrijving</th>
                     <th style={thStyle}>Aantal</th>
                     <th style={thStyle}>Leverdatum</th>
                     <th style={thStyle}>Status</th>
-                    <th style={thStyle}>Productie Status</th>
-                    <th style={thStyle}>Beschikbare Voorraad</th>
+                    <th style={thStyle}>Productiestatus</th>
+                    <th style={thStyle}>Beschikbaar</th>
                     <th style={thStyle}>Te Produceren</th>
                     <th style={thStyle}>Direct Leverbaar</th>
                     <th style={thStyle}>Prioriteit</th>
@@ -238,45 +264,29 @@ function App() {
                         <td style={tdStyle}>{order.aantal}</td>
                         <td style={tdStyle}>{order.leverdatum}</td>
                         <td style={tdStyle}>{order.status}</td>
-                        <td style={tdStyle}>
-                          {order.productiestatus}
-                        </td>
-
-                        <td style={tdStyle}>
-                          {beschikbaar}
-                        </td>
-
-                        <td style={tdStyle}>
-                          {teProduceren}
-                        </td>
-
-                        <td style={tdStyle}>
-                          {directLeverbaar}
-                        </td>
+                        <td style={tdStyle}>{order.productiestatus}</td>
+                        <td style={tdStyle}>{beschikbaar}</td>
+                        <td style={tdStyle}>{teProduceren}</td>
+                        <td style={tdStyle}>{directLeverbaar}</td>
 
                         <td
                           style={{
                             ...tdStyle,
                             fontWeight: "bold",
                             color:
-                              bepaalPrioriteit(
-                                order.leverdatum
-                              ) === "Achterstallig"
+                              bepaalPrioriteit(order.leverdatum) ===
+                              "Achterstallig"
                                 ? "red"
-                                : bepaalPrioriteit(
-                                    order.leverdatum
-                                  ) === "Kritiek"
+                                : bepaalPrioriteit(order.leverdatum) ===
+                                  "Kritiek"
                                 ? "orange"
-                                : bepaalPrioriteit(
-                                    order.leverdatum
-                                  ) === "Hoog"
-                                ? "blue"
+                                : bepaalPrioriteit(order.leverdatum) ===
+                                  "Hoog"
+                                ? "#2563eb"
                                 : "green",
                           }}
                         >
-                          {bepaalPrioriteit(
-                            order.leverdatum
-                          )}
+                          {bepaalPrioriteit(order.leverdatum)}
                         </td>
                       </tr>
                     );
@@ -292,12 +302,7 @@ function App() {
             <h2>Voorraadoverzicht</h2>
 
             <div style={{ overflowX: "auto" }}>
-              <table
-                style={{
-                  width: "100%",
-                  borderCollapse: "collapse",
-                }}
-              >
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr>
                     <th style={thStyle}>Artikelnummer</th>
@@ -326,9 +331,7 @@ function App() {
                           {artikel.omschrijving}
                         </td>
 
-                        <td style={tdStyle}>
-                          {artikel.voorraad}
-                        </td>
+                        <td style={tdStyle}>{artikel.voorraad}</td>
 
                         <td style={tdStyle}>
                           {artikel.reserveringen}
@@ -337,14 +340,11 @@ function App() {
                         <td
                           style={{
                             ...tdStyle,
+                            fontWeight: "bold",
                             color:
                               beschikbaar < 0
                                 ? "red"
                                 : "black",
-                            fontWeight:
-                              beschikbaar < 0
-                                ? "bold"
-                                : "normal",
                           }}
                         >
                           {beschikbaar}
@@ -386,17 +386,40 @@ function App() {
         {pagina === "planning" && (
           <>
             <h2>Productieplanning</h2>
+
             <p>
-              In Fase 9 bouwen we hier automatisch de
-              productievolgorde op basis van:
+              Volgende fase:
+              automatische productievolgorde bepalen op basis van:
             </p>
 
             <ul>
               <li>Leverdatum</li>
-              <li>Prioriteit</li>
               <li>Beschikbare voorraad</li>
+              <li>Direct leverbaar</li>
               <li>Te produceren aantallen</li>
+              <li>Prioriteit</li>
             </ul>
+          </>
+        )}
+
+        {pagina === "import" && (
+          <>
+            <h2>Importeer LM_MAT</h2>
+
+            <input
+              type="file"
+              accept=".xlsx,.xls,.csv"
+              onChange={(e) =>
+                setBestand(e.target.files[0])
+              }
+            />
+
+            {bestand && (
+              <div style={{ marginTop: "20px" }}>
+                <strong>Geselecteerd bestand:</strong>
+                <p>{bestand.name}</p>
+              </div>
+            )}
           </>
         )}
       </div>
@@ -409,12 +432,13 @@ const kaartStyle = {
   borderRadius: "10px",
   padding: "20px",
   minWidth: "220px",
+  backgroundColor: "#ffffff",
 };
 
 const thStyle = {
   border: "1px solid #ddd",
   padding: "10px",
-  backgroundColor: "#f4f4f4",
+  backgroundColor: "#f3f4f6",
   textAlign: "left",
 };
 
