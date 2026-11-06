@@ -159,6 +159,13 @@ function App() {
         </p>
 
         <p
+          style={{ cursor: "pionter" }}
+          onClick={() => setPagina("tekorten")}
+          >
+            Tekorten
+          </p>
+
+        <p
           style={{ cursor: "pointer" }}
           onClick={() => setPagina("import")}
         >
@@ -177,6 +184,7 @@ function App() {
           {pagina === "orders" && "Orders"}
           {pagina === "voorraad" && "Voorraad"}
           {pagina === "planning" && "Productieplanning"}
+          {pagina === "tekorten" && "Tekorten"}
           {pagina === "import" && "Importeren"}
         </h1>
 
