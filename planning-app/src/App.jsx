@@ -59,7 +59,10 @@ function App() {
   ];
 
   const [pagina, setPagina] = useState("dashboard");
-  const [bestand, setBestand] = useState(null);
+  const [bestandInhoud, setBestandInhoud] = useState("");
+  const [LM_MATData, setLM_MATData]= useState([]);
+  const [tekorten,setTekorten] = useState([]);
+
 
   const bepaalPrioriteit = (leverdatum) => {
     const vandaag = new Date();
@@ -105,6 +108,39 @@ function App() {
       a.voorraad - a.reserveringen >= 0 &&
       a.voorraad - a.reserveringen < a.minimum
   ).length;
+
+  const leesBestand = () => {
+  if (!bestand) return;
+
+  const reader = new FileReader();
+
+  reader.onload = (event) => {
+    const inhoud = event.target.result;
+
+    setBestandInhoud(inhoud);
+
+    const regels = inhoud
+      .split("\n")
+      
+      setLmMatdata(regels);
+
+    const gevondenTekorten = regels.filter(
+      (regel) =>
+        regel.includes("F.") &&
+      regel.includes("_")
+    );
+    
+    setTekorten(gevondenTekorten);
+
+
+
+    alert(
+      `Bestand geladen.\n\n${bestand.name}`
+    );
+  };
+
+  reader.readAsText(bestand);
+};
 
   return (
     <div
@@ -160,6 +196,13 @@ function App() {
 
         <p
           style={{ cursor: "pionter" }}
+          onClick={() => setPagina("lm_mat")}
+          >
+            LM_MAT Import 
+          </p>
+
+        <p
+          style={{ cursor: "pionter" }}
           onClick={() => setPagina("tekorten")}
           >
             Tekorten
@@ -184,6 +227,7 @@ function App() {
           {pagina === "orders" && "Orders"}
           {pagina === "voorraad" && "Voorraad"}
           {pagina === "planning" && "Productieplanning"}
+          {pagina === "lm_mat" && "LM_MAT Import"}
           {pagina === "tekorten" && "Tekorten"}
           {pagina === "import" && "Importeren"}
         </h1>
@@ -410,23 +454,59 @@ function App() {
           </>
         )}
 
-        {pagina === "import" && (
+        {pagina === "lm_mat" && (
           <>
-            <h2>Importeer LM_MAT</h2>
+            <h2>LM_MAT Import</h2>
+
+            <p>
+              Selecteer een LM_MAT.txt bestand om
+              voorraadgegevens te importeren.
+            </p>
 
             <input
               type="file"
-              accept=".xlsx,.xls,.csv"
-              onChange={(e) =>
-                setBestand(e.target.files[0])
-              }
+              accept=".txt"
             />
 
-            {bestand && (
+            <button
+              onClick={leesBestand}
+              style={{
+                display: "block",
+                marginTop: "20px",
+                padding: "10px 20px",
+                cursor: "pointer"
+              }}
+            >
+              Importeer LM_MAT
+            </button>
+
+            <p>
+              Aantal artikelen:
+
+              {voorraadArtikelen.length}
+            </p>
+
+            {bestandInhoud && (
               <div style={{ marginTop: "20px" }}>
-                <strong>Geselecteerd bestand:</strong>
-                <p>{bestand.name}</p>
+                <strong>Bestand geselecteerd:</strong>
+                <br />
+                {bestandInhoud}
               </div>
+            )}
+            {LM_MATData.length > 0 && ( <div
+              style={{
+                marginTop: "20px",
+                padding: "15px",
+                border: "1px solid #ccc",
+              }}
+              >
+                <h3> LM_MAT Analyse </h3>
+
+                <p>
+                  regels gevonden:
+                  {LM_MATData.lenght}
+                </p>
+                </div>
             )}
           </>
         )}
@@ -434,6 +514,8 @@ function App() {
     </div>
   );
 }
+
+
 
 const kaartStyle = {
   border: "1px solid #d1d5db",
