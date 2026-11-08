@@ -59,7 +59,8 @@ function App() {
   ];
 
   const [pagina, setPagina] = useState("dashboard");
-  const [bestandInhoud, setBestandInhoud] = useState("");
+  const [bestand, setBestand] = useState(null);
+  const [bestandInhoud, setBestandInhoud] = useState(null);
   const [LM_MATData, setLM_MATData]= useState([]);
   const [tekorten,setTekorten] = useState([]);
 
@@ -122,7 +123,7 @@ function App() {
     const regels = inhoud
       .split("\n")
       
-      setLmMatdata(regels);
+      setLM_MATData(regels);
 
     const gevondenTekorten = regels.filter(
       (regel) =>
@@ -195,14 +196,14 @@ function App() {
         </p>
 
         <p
-          style={{ cursor: "pionter" }}
+          style={{ cursor: "pointer" }}
           onClick={() => setPagina("lm_mat")}
           >
             LM_MAT Import 
           </p>
 
         <p
-          style={{ cursor: "pionter" }}
+          style={{ cursor: "pointer" }}
           onClick={() => setPagina("tekorten")}
           >
             Tekorten
@@ -466,6 +467,7 @@ function App() {
             <input
               type="file"
               accept=".txt"
+              onChange={(e) => setBestand(e.target.files[0])}
             />
 
             <button
@@ -490,7 +492,7 @@ function App() {
               <div style={{ marginTop: "20px" }}>
                 <strong>Bestand geselecteerd:</strong>
                 <br />
-                {bestandInhoud}
+                {bestand?.name}
               </div>
             )}
             {LM_MATData.length > 0 && ( <div
@@ -504,7 +506,7 @@ function App() {
 
                 <p>
                   regels gevonden:
-                  {LM_MATData.lenght}
+                  {LM_MATData.length}
                 </p>
                 </div>
             )}
