@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { kaartStyle, thStyle, tdStyle } from "./styles";
 import { bepaalPrioriteit } from "./untils/prioriteit";
+import { zoekVoorraad } from "./untils/voorraad";
+
 
 
 function App() {
@@ -83,15 +85,7 @@ function App() {
     return "Normaal";
   };
 
-  const zoekVoorraad = (artikelnummer) => {
-    const artikel = voorraadArtikelen.find(
-      (a) => a.artikelnummer === artikelnummer
-    );
-
-    if (!artikel) return 0;
-
-    return artikel.voorraad - artikel.reserveringen;
-  };
+  
 
   const openOrders = orders.length;
 
@@ -300,6 +294,7 @@ function App() {
                 <tbody>
                   {orders.map((order) => {
                     const beschikbaar = zoekVoorraad(
+                      voorraadArtikelen,
                       order.artikelnummer
                     );
 
