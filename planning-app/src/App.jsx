@@ -1,4 +1,7 @@
 import { useState } from "react";
+import { kaartStyle, thStyle, tdStyle } from "./styles";
+import { bepaalPrioriteit } from "./untils/prioriteit";
+
 
 function App() {
   const voorraadArtikelen = [
@@ -518,25 +521,5 @@ function App() {
 }
 
 
-
-const kaartStyle = {
-  border: "1px solid #d1d5db",
-  borderRadius: "10px",
-  padding: "20px",
-  minWidth: "220px",
-  backgroundColor: "#ffffff",
-};
-
-const thStyle = {
-  border: "1px solid #ddd",
-  padding: "10px",
-  backgroundColor: "#f3f4f6",
-  textAlign: "left",
-};
-
-const tdStyle = {
-  border: "1px solid #ddd",
-  padding: "10px",
-};
 
 export default App;
