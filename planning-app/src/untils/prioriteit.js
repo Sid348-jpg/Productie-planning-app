@@ -4,7 +4,7 @@ export const bepaalPrioriteit = (leverdatum) => {
 
     const lever = new Date(leverdatum + "T00:00:00");
 
-    const verschil = Math.cell(
+    const verschil = Math.ceil(
         (lever - vandaag) / (1000 * 60 * 60 * 24)
     );
 

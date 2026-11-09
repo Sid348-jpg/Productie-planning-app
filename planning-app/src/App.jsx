@@ -14,21 +14,6 @@ function App() {
   const [tekorten,setTekorten] = useState([]);
 
 
-  const bepaalPrioriteit = (leverdatum) => {
-    const vandaag = new Date();
-    const lever = new Date(leverdatum);
-
-    const verschil = Math.ceil(
-      (lever - vandaag) / (1000 * 60 * 60 * 24)
-    );
-
-    if (verschil < 0) return "Achterstallig";
-    if (verschil <= 2) return "Kritiek";
-    if (verschil <= 7) return "Hoog";
-
-    return "Normaal";
-  };
-
   const openOrders = orders.length
   const kritiekeOrders = orders.filter(
     (o) => bepaalPrioriteit(o.leverdatum) === "Kritiek"
