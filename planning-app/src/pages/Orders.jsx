@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { thStyle, tdStyle } from "../styles";
 import { bepaalPrioriteit } from "../utils/prioriteit";
-import { zoekVoorraad } from "../utils/voorraad";
+import { verdeelVoorraad } from "../utils/verdeling";
 
 const prioriteitKleur = {
   Achterstallig: "red",
@@ -13,6 +13,7 @@ const prioriteitKleur = {
 function Orders({ orders, voorraadArtikelen }) {
   const [zoektekst, setZoektekst] = useState("");
   const [prioriteitFilter, setPrioriteitFilter] = useState("Alle");
+  const verdeling = verdeelVoorraad(orders, voorraadArtikelen);
 
   const zichtbareOrders = orders
     .filter((order) => {
@@ -91,17 +92,9 @@ function Orders({ orders, voorraadArtikelen }) {
 
           <tbody>
             {zichtbareOrders.map((order) => {
-              const beschikbaar = zoekVoorraad(
-                voorraadArtikelen,
-                order.artikelnummer
-              );
-
-              const directLeverbaar = Math.max(
-                Math.min(order.aantal, beschikbaar),
-                0
-              );
-
-              const teProduceren = order.aantal - directLeverbaar;
+              const { beschikbaar, directLeverbaar, teProduceren } =
+  verdeling[order.ordernummer];
+              
               const prioriteit = bepaalPrioriteit(order.leverdatum);
 
               return (
