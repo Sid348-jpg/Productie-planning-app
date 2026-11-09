@@ -14,46 +14,7 @@ import LmMat from "./pages/LmMat";
 function App() {
   
   const [pagina, setPagina] = useState("dashboard");
-  const [bestand, setBestand] = useState(null);
-  const [bestandInhoud, setBestandInhoud] = useState(null);
-  const [LM_MATData, setLM_MATData]= useState([]);
   const [tekorten,setTekorten] = useState([]);
-
-
- 
-
-  const leesBestand = () => {
-  if (!bestand) return;
-
-  const reader = new FileReader();
-
-  reader.onload = (event) => {
-    const inhoud = event.target.result;
-
-    setBestandInhoud(inhoud);
-
-    const regels = inhoud
-      .split("\n")
-      
-      setLM_MATData(regels);
-
-    const gevondenTekorten = regels.filter(
-      (regel) =>
-        regel.includes("F.") &&
-      regel.includes("_")
-    );
-    
-    setTekorten(gevondenTekorten);
-
-
-
-    alert(
-      `Bestand geladen.\n\n${bestand.name}`
-    );
-  };
-
-  reader.readAsText(bestand);
-};
 
   return (
     <div
