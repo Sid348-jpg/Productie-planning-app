@@ -8,6 +8,7 @@ import Orders from "./pages/Orders";
 import Dashboard from "./pages/Dashboard";
 import Menu from "./components/Menu";
 import Planning from "./pages/Planning";
+import LmMat from "./pages/LmMat";
 
 
 function App() {
@@ -98,62 +99,9 @@ function App() {
         {pagina === "planning" && <Planning />}
 
         {pagina === "lm_mat" && (
-          <>
-            <h2>LM_MAT Import</h2>
+  <LmMat voorraadArtikelen={voorraadArtikelen} />
+)}
 
-            <p>
-              Selecteer een LM_MAT.txt bestand om
-              voorraadgegevens te importeren.
-            </p>
-
-            <input
-              type="file"
-              accept=".txt"
-              onChange={(e) => setBestand(e.target.files[0])}
-            />
-
-            <button
-              onClick={leesBestand}
-              style={{
-                display: "block",
-                marginTop: "20px",
-                padding: "10px 20px",
-                cursor: "pointer"
-              }}
-            >
-              Importeer LM_MAT
-            </button>
-
-            <p>
-              Aantal artikelen:
-
-              {voorraadArtikelen.length}
-            </p>
-
-            {bestandInhoud && (
-              <div style={{ marginTop: "20px" }}>
-                <strong>Bestand geselecteerd:</strong>
-                <br />
-                {bestand?.name}
-              </div>
-            )}
-            {LM_MATData.length > 0 && ( <div
-              style={{
-                marginTop: "20px",
-                padding: "15px",
-                border: "1px solid #ccc",
-              }}
-              >
-                <h3> LM_MAT Analyse </h3>
-
-                <p>
-                  regels gevonden:
-                  {LM_MATData.length}
-                </p>
-                </div>
-            )}
-          </>
-        )}
       </div>
     </div>
   );
