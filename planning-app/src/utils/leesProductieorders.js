@@ -1,3 +1,26 @@
+const statusNamen = {
+  "1": "Bezig met invoer",
+  "2": "Calculatie wacht op afronding",
+  "3": "Offertebrief gemaakt",
+  "4": "Offerte meenemen in overzicht",
+  "5": "Orderbevestiging gemaakt",
+  "6": "Vrijgegeven voor productie",
+  "7": "In productie gegeven",
+  "8": "Productiepapieren geprint",
+  "9": "Intern gereed/Exped.",
+  A: "Nalevering verzorgen",
+  B: "Deelfactuur/nalevering",
+  C: "Afgesproken deellevering",
+  D: "Verzending compleet",
+  E: "Compleet gefactureerd",
+  F: "Beveiligd",
+  H: "Klaarzetten voor historie",
+  I: "Indirect",
+  X: "Productie afgesloten",
+};
+
+const afgerond = ["9", "A", "B", "C", "D", "E", "F", "H", "I", "X"];
+
 const parseGetal = (tekst) => {
   const schoon = String(tekst ?? "")
     .replace(/[€\s.]/g, "")
@@ -32,6 +55,7 @@ export const leesProductieorders = (inhoud) => {
 
       const besteld = parseGetal(rij["Bestelhoeveelheid"]);
       const gereed = parseGetal(rij["Gereed"]);
+      const statuscode = rij["Status"];
 
       return {
         ordernummer: rij["ProductieNummer"],
@@ -40,9 +64,15 @@ export const leesProductieorders = (inhoud) => {
         omschrijving: rij["Omschrijving"],
         aantal: Math.max(besteld - gereed, 0),
         leverdatum: zetDatum(rij["Leverdatum"] || rij["Datum nodig"]),
-        status: rij["Status"],
+        statuscode,
+        status: statusNamen[statuscode] || statuscode,
         productiestatus: `${gereed} van ${besteld} gereed`,
       };
     })
-    .filter((order) => order.ordernummer && order.artikelnummer);
+    .filter(
+      (order) =>
+        order.ordernummer &&
+        order.artikelnummer &&
+        !afgerond.includes(order.statuscode)
+    );
 };
