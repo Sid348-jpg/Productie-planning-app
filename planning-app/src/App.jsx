@@ -7,6 +7,7 @@ import Voorraad from "./pages/Voorraad";
 import Orders from "./pages/Orders";
 import Dashboard from "./pages/Dashboard";
 import Menu from "./components/Menu";
+import Planning from "./pages/Planning";
 
 
 function App() {
@@ -94,24 +95,7 @@ function App() {
 )}
 
 
-        {pagina === "planning" && (
-          <>
-            <h2>Productieplanning</h2>
-
-            <p>
-              Volgende fase:
-              automatische productievolgorde bepalen op basis van:
-            </p>
-
-            <ul>
-              <li>Leverdatum</li>
-              <li>Beschikbare voorraad</li>
-              <li>Direct leverbaar</li>
-              <li>Te produceren aantallen</li>
-              <li>Prioriteit</li>
-            </ul>
-          </>
-        )}
+        {pagina === "planning" && <Planning />}
 
         {pagina === "lm_mat" && (
           <>
