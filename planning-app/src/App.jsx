@@ -17,24 +17,7 @@ function App() {
   const [tekorten,setTekorten] = useState([]);
 
 
-  const openOrders = orders.length
-  const kritiekeOrders = orders.filter(
-    (o) => bepaalPrioriteit(o.leverdatum) === "Kritiek"
-  ).length;
-
-  const achterstalligeOrders = orders.filter(
-    (o) => bepaalPrioriteit(o.leverdatum) === "Achterstallig"
-  ).length;
-
-  const negatieveVoorraad = voorraadArtikelen.filter(
-    (a) => a.voorraad - a.reserveringen < 0
-  ).length;
-
-  const onderMinimum = voorraadArtikelen.filter(
-    (a) =>
-      a.voorraad - a.reserveringen >= 0 &&
-      a.voorraad - a.reserveringen < a.minimum
-  ).length;
+ 
 
   const leesBestand = () => {
   if (!bestand) return;
