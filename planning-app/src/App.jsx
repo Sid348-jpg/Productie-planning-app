@@ -2,7 +2,7 @@ import { useState } from "react";
 import { kaartStyle, thStyle, tdStyle } from "./styles";
 import { bepaalPrioriteit } from "./utils/prioriteit";
 import { zoekVoorraad } from "./utils/voorraad";
-import { voorraadArtikelen, orders } from "./data/voorbeeldData";
+import { voorraadArtikelen as startVoorraad, orders } from "./data/voorbeeldData";
 import Voorraad from "./pages/Voorraad";
 import Orders from "./pages/Orders";
 import Dashboard from "./pages/Dashboard";
@@ -14,6 +14,7 @@ import LmMat from "./pages/LmMat";
 function App() {
   
   const [pagina, setPagina] = useState("dashboard");
+  const [voorraadArtikelen, setVoorraadArtikelen] = useState(startVoorraad);
   const [tekorten,setTekorten] = useState([]);
 
   return (
