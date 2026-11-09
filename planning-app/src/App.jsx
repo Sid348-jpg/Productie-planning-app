@@ -6,6 +6,7 @@ import { voorraadArtikelen, orders } from "./data/voorbeeldData";
 import Voorraad from "./pages/Voorraad";
 import Orders from "./pages/Orders";
 import Dashboard from "./pages/Dashboard";
+import Menu from "./components/Menu";
 
 
 function App() {
@@ -60,71 +61,8 @@ function App() {
         fontFamily: "Arial, sans-serif",
       }}
     >
-      <div
-        style={{
-          width: "250px",
-          backgroundColor: "#1f2937",
-          color: "white",
-          padding: "20px",
-        }}
-      >
-        <h2>Production Planning Management</h2>
-
-        <p style={{ color: "#9ca3af" }}>
-          Productie- en voorraadbeheer
-        </p>
-
-        <hr />
-
-        <p
-          style={{ cursor: "pointer" }}
-          onClick={() => setPagina("dashboard")}
-        >
-          Dashboard
-        </p>
-
-        <p
-          style={{ cursor: "pointer" }}
-          onClick={() => setPagina("orders")}
-        >
-          Orders
-        </p>
-
-        <p
-          style={{ cursor: "pointer" }}
-          onClick={() => setPagina("voorraad")}
-        >
-          Voorraad
-        </p>
-
-        <p
-          style={{ cursor: "pointer" }}
-          onClick={() => setPagina("planning")}
-        >
-          Productieplanning
-        </p>
-
-        <p
-          style={{ cursor: "pointer" }}
-          onClick={() => setPagina("lm_mat")}
-          >
-            LM_MAT Import 
-          </p>
-
-        <p
-          style={{ cursor: "pointer" }}
-          onClick={() => setPagina("tekorten")}
-          >
-            Tekorten
-          </p>
-
-        <p
-          style={{ cursor: "pointer" }}
-          onClick={() => setPagina("import")}
-        >
-          Importeren
-        </p>
-      </div>
+      
+      <Menu setPagina={setPagina} />
 
       <div
         style={{
