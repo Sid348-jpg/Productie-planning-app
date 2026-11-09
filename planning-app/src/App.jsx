@@ -5,6 +5,7 @@ import { zoekVoorraad } from "./utils/voorraad";
 import { voorraadArtikelen, orders } from "./data/voorbeeldData";
 import Voorraad from "./pages/Voorraad";
 import Orders from "./pages/Orders";
+import Dashboard from "./pages/Dashboard";
 
 
 function App() {
@@ -158,43 +159,6 @@ function App() {
           {pagina === "import" && "Importeren"}
         </h1>
 
-        {pagina === "dashboard" && (
-          <>
-            <div
-              style={{
-                display: "flex",
-                gap: "20px",
-                flexWrap: "wrap",
-                marginBottom: "30px",
-              }}
-            >
-              <div style={kaartStyle}>
-                <h3>Open Orders</h3>
-                <p>{openOrders}</p>
-              </div>
-
-              <div style={kaartStyle}>
-                <h3>Kritieke Orders</h3>
-                <p>{kritiekeOrders}</p>
-              </div>
-
-              <div style={kaartStyle}>
-                <h3>Achterstallige Orders</h3>
-                <p>{achterstalligeOrders}</p>
-              </div>
-
-              <div style={kaartStyle}>
-                <h3>Negatieve Voorraad</h3>
-                <p>{negatieveVoorraad}</p>
-              </div>
-
-              <div style={kaartStyle}>
-                <h3>Onder Minimum</h3>
-                <p>{onderMinimum}</p>
-              </div>
-            </div>
-          </>
-        )}
 
        {pagina === "orders" && (
   <Orders orders={orders} voorraadArtikelen={voorraadArtikelen} />
@@ -203,6 +167,11 @@ function App() {
 {pagina === "voorraad" && (
   <Voorraad voorraadArtikelen={voorraadArtikelen} />
 )}
+
+{pagina === "dashboard" && (
+  <Dashboard orders={orders} voorraadArtikelen={voorraadArtikelen} />
+)}
+
 
         {pagina === "planning" && (
           <>
