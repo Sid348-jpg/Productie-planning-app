@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { kaartStyle, thStyle, tdStyle } from "./styles";
 import { bepaalPrioriteit } from "./utils/prioriteit";
 import { zoekVoorraad } from "./utils/voorraad";
@@ -14,7 +14,25 @@ import LmMat from "./pages/LmMat";
 function App() {
   
   const [pagina, setPagina] = useState("dashboard");
-  const [voorraadArtikelen, setVoorraadArtikelen] = useState(startVoorraad);
+  const [voorraadArtikelen, setVoorraadArtikelen] = useState(() => {
+  try {
+    const opgeslagen = localStorage.getItem("voorraadArtikelen");
+    return opgeslagen ? JSON.parse(opgeslagen) : startVoorraad;
+  } catch {
+    return startVoorraad;
+  }
+});
+
+useEffect(() => {
+  try {
+    localStorage.setItem(
+      "voorraadArtikelen",
+      JSON.stringify(voorraadArtikelen)
+    );
+  } catch {
+    // opslaan is mislukt, de app blijft gewoon werken
+  }
+}, [voorraadArtikelen]);
   const [tekorten,setTekorten] = useState([]);
 
   return (
@@ -61,7 +79,9 @@ function App() {
         {pagina === "planning" && <Planning />}
 
         {pagina === "lm_mat" && (
-  <LmMat voorraadArtikelen={voorraadArtikelen} />
+  <LmMat voorraadArtikelen={voorraadArtikelen} 
+  setVoorraadArtikelen={setVoorraadArtikelen}
+  />
 )}
 
       </div>
