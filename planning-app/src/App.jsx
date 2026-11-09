@@ -2,14 +2,14 @@ import { useState, useEffect } from "react";
 import { kaartStyle, thStyle, tdStyle } from "./styles";
 import { bepaalPrioriteit } from "./utils/prioriteit";
 import { zoekVoorraad } from "./utils/voorraad";
-import { voorraadArtikelen as startVoorraad, orders } from "./data/voorbeeldData";
+import { voorraadArtikelen as startVoorraad, orders as startOrders } from "./data/voorbeeldData";
 import Voorraad from "./pages/Voorraad";
 import Orders from "./pages/Orders";
 import Dashboard from "./pages/Dashboard";
 import Menu from "./components/Menu";
 import Planning from "./pages/Planning";
 import LmMat from "./pages/LmMat";
-
+import ImportOrders from "./pages/ImportOrders";
 
 function App() {
   
@@ -33,6 +33,25 @@ useEffect(() => {
     // opslaan is mislukt, de app blijft gewoon werken
   }
 }, [voorraadArtikelen]);
+
+const [orders, setOrders] = useState(() => {
+    try {
+      const opgeslagen = localStorage.getItem("orders");
+      return opgeslagen ? JSON.parse(opgeslagen) : startOrders;
+    } catch {
+      return startOrders;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("orders", JSON.stringify(orders));
+    } catch {
+      // opslaan is mislukt, de app blijft gewoon werken
+    }
+  }, [orders]);
+
+
   const [tekorten,setTekorten] = useState([]);
 
   return (
@@ -84,6 +103,9 @@ useEffect(() => {
   />
 )}
 
+{pagina === "import" && (
+  <ImportOrders aantalOrders={orders.length} setOrders={setOrders} />
+)}
       </div>
     </div>
   );
