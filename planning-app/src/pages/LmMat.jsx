@@ -1,6 +1,7 @@
 import { useState } from "react";
+import { leesLmMat } from "../utils/leesLmMat";
 
-function LmMat({ voorraadArtikelen }) {
+function LmMat({ voorraadArtikelen, setVoorraadArtikelen }) {
   const [bestand, setBestand] = useState(null);
   const [regels, setRegels] = useState([]);
 
@@ -12,7 +13,11 @@ function LmMat({ voorraadArtikelen }) {
     reader.onload = (event) => {
       const inhoud = event.target.result;
       setRegels(inhoud.split("\n"));
-      alert(`Bestand geladen.\n\n${bestand.name}`);
+
+      const artikelen = leesLmMat(inhoud);
+      setVoorraadArtikelen(artikelen);
+
+      alert(`Bestand geladen.\n\n${bestand.name}\n${artikelen.length} artikelen`);
     };
 
     reader.readAsText(bestand);
@@ -22,7 +27,7 @@ function LmMat({ voorraadArtikelen }) {
     <>
       <h2>LM_MAT Import</h2>
 
-      <p>Selecteer een LM_MAT.txt bestand om voorraadgegevens te importeren.</p>
+      <p>Selecteer het bestand LM_MAT.txt om voorraadgegevens te importeren.</p>
 
       <input
         type="file"
@@ -42,7 +47,7 @@ function LmMat({ voorraadArtikelen }) {
         Importeer LM_MAT
       </button>
 
-      <p>Aantal artikelen: {voorraadArtikelen.length}</p>
+      <p>Aantal artikelen in de app: {voorraadArtikelen.length}</p>
 
       {bestand && (
         <div style={{ marginTop: "20px" }}>

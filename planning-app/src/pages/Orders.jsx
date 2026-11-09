@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { thStyle, tdStyle } from "../styles";
 import { bepaalPrioriteit } from "../utils/prioriteit";
 import { zoekVoorraad } from "../utils/voorraad";
@@ -10,9 +11,64 @@ const prioriteitKleur = {
 };
 
 function Orders({ orders, voorraadArtikelen }) {
+  const [zoektekst, setZoektekst] = useState("");
+  const [prioriteitFilter, setPrioriteitFilter] = useState("Alle");
+
+  const zichtbareOrders = orders
+    .filter((order) => {
+      const tekst = zoektekst.toLowerCase();
+
+      const pastBijZoek = [
+        order.ordernummer,
+        order.artikelnummer,
+        order.omschrijving,
+      ]
+        .join(" ")
+        .toLowerCase()
+        .includes(tekst);
+
+      const pastBijFilter =
+        prioriteitFilter === "Alle" ||
+        bepaalPrioriteit(order.leverdatum) === prioriteitFilter;
+
+      return pastBijZoek && pastBijFilter;
+    })
+    .sort((a, b) => {
+      if (!a.leverdatum) return 1;
+      if (!b.leverdatum) return -1;
+      return a.leverdatum.localeCompare(b.leverdatum);
+    });
+
   return (
     <>
       <h2>Orderoverzicht</h2>
+
+      <div style={{ display: "flex", gap: "15px", marginBottom: "15px" }}>
+        <input
+          type="text"
+          placeholder="Zoek op ordernummer, artikel of omschrijving"
+          value={zoektekst}
+          onChange={(e) => setZoektekst(e.target.value)}
+          style={{ padding: "8px", width: "350px" }}
+        />
+
+        <select
+          value={prioriteitFilter}
+          onChange={(e) => setPrioriteitFilter(e.target.value)}
+          style={{ padding: "8px" }}
+        >
+          <option value="Alle">Alle prioriteiten</option>
+          <option value="Achterstallig">Achterstallig</option>
+          <option value="Kritiek">Kritiek</option>
+          <option value="Hoog">Hoog</option>
+          <option value="Normaal">Normaal</option>
+        </select>
+      </div>
+
+      <p>
+        {zichtbareOrders.length} van {orders.length} orders, gesorteerd op
+        leverdatum
+      </p>
 
       <div style={{ overflowX: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -34,7 +90,7 @@ function Orders({ orders, voorraadArtikelen }) {
           </thead>
 
           <tbody>
-            {orders.map((order) => {
+            {zichtbareOrders.map((order) => {
               const beschikbaar = zoekVoorraad(
                 voorraadArtikelen,
                 order.artikelnummer
