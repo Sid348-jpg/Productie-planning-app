@@ -1,16 +1,5 @@
 import { useState } from "react";
-import { leesWeekbezetting } from "../utils/leesWeekbezetting";
 import { bewerkingsplaatsen, groepNamen, weergaveVolgorde } from "../data/bewerkingsplaatsen";
-
-const OPSLAG_SLEUTEL = "weekbezetting";
-
-// Bewerkingsplaatsen die niet meer bestaan: hun uren horen bij een andere plaats
-const VERVANGEN_PLAATSEN = { FR001: "FR003" };
-
-function vervangPlaats(bewerking) {
-  const nieuw = VERVANGEN_PLAATSEN[bewerking.plaats];
-  return nieuw ? { ...bewerking, plaats: nieuw } : bewerking;
-}
 
 // Zoekt per bewerkingsplaats de gegevens uit de Excel op
 const plaatsInfo = {};
@@ -58,57 +47,46 @@ function weekSleutel(datum) {
   return d.getUTCFullYear() + "-" + String(week).padStart(2, "0");
 }
 
-function laadOpgeslagen() {
-  try {
-    const tekst = localStorage.getItem(OPSLAG_SLEUTEL);
-    return tekst ? JSON.parse(tekst).map(vervangPlaats) : [];
-  } catch {
-    return [];
-  }
-}
-
 const celStijl = { border: "1px solid #ddd", padding: "2px 6px", whiteSpace: "nowrap" };
 const HUIDIGE_WEEK_KLEUR = "#ffe58a";
 const ACHTERSTAND_KLEUR = "#ff9a9a";
 const WEEK_BREEDTE = 44;
 const DIKKE_LIJN = "3px solid #333";
 
-export function Planning() {
-  const [bewerkingen, setBewerkingen] = useState(laadOpgeslagen);
-  const [fout, setFout] = useState("");
+export function Planning({ bewerkingen = [] }) {
   const [gekozenGroep, setGekozenGroep] = useState("alle");
 
-  async function bijBestandKiezen(event) {
-    const bestand = event.target.files[0];
-    if (!bestand) return;
-    try {
-      const buffer = await bestand.arrayBuffer();
-      const bytes = new Uint8Array(buffer);
-      const isUtf16 = bytes[0] === 0xff && bytes[1] === 0xfe;
-      const tekst = new TextDecoder(isUtf16 ? "utf-16le" : "utf-8").decode(buffer);
-      const lijst = leesWeekbezetting(tekst).map(vervangPlaats);
-      setBewerkingen(lijst);
-      localStorage.setItem(OPSLAG_SLEUTEL, JSON.stringify(lijst));
-      setFout("");
-    } catch (e) {
-      setFout(e.message);
-    }
-    event.target.value = "";
-  }
+  // De actuele week en de 3 weken erna
+  const vandaag = new Date();
+  const huidigeWeek = weekSleutel(vandaag);
+  const komendeWeken = [0, 1, 2, 3].map((i) =>
+    weekSleutel(
+      new Date(vandaag.getFullYear(), vandaag.getMonth(), vandaag.getDate() + 7 * i)
+    )
+  );
 
-  // Overzicht per machinegroep (de lege letter "" = zonder groep)
+  // Overzicht per machinegroep (de lege letter "" = zonder groep),
+  // met capaciteit, achterstand en de uren per komende week
   const overzicht = [...Object.keys(groepNamen), ""].map((letter) => {
     const regels = bewerkingen.filter((b) => groepVan(b.plaats) === letter);
     const uren = regels.reduce((som, b) => som + b.uren, 0);
     const capa = bewerkingsplaatsen
       .filter((p) => p.groep === letter)
       .reduce((som, p) => som + p.weekCapa, 0);
+    const achterstandUren = regels
+      .filter((b) => b.week && b.week < huidigeWeek)
+      .reduce((som, b) => som + b.uren, 0);
+    const perWeek = komendeWeken.map((w) =>
+      regels.filter((b) => b.week === w).reduce((som, b) => som + b.uren, 0)
+    );
     return {
       letter,
       naam: letter ? groepNamen[letter] : "Zonder groep",
       aantal: regels.length,
       uren,
       capa,
+      achterstandUren,
+      perWeek,
     };
   });
 
@@ -131,14 +109,7 @@ export function Planning() {
 
   const totaalUren = zichtbaar.reduce((som, b) => som + b.uren, 0);
 
-  // Weekkolommen: eerdere weken met uren + actuele week + 3 weken erna
-  const vandaag = new Date();
-  const huidigeWeek = weekSleutel(vandaag);
-  const komendeWeken = [0, 1, 2, 3].map((i) =>
-    weekSleutel(
-      new Date(vandaag.getFullYear(), vandaag.getMonth(), vandaag.getDate() + 7 * i)
-    )
-  );
+  // Weekkolommen in de lijst met bewerkingen: eerdere weken met uren + actuele week + 3 weken erna
   const eerdereWeken = [...new Set(zichtbaar.map((b) => b.week))]
     .filter((w) => w && w < huidigeWeek)
     .sort();
@@ -156,37 +127,88 @@ export function Planning() {
     };
   }
 
+  const midden = { ...celStijl, textAlign: "center" };
+
   return (
     <div>
       <h2>Productieplanning</h2>
 
-      <p>
-        Kies WB_WEEKBEZ.txt: <input type="file" accept=".txt" onChange={bijBestandKiezen} />
-      </p>
-
-      {fout && <p style={{ color: "red" }}>{fout}</p>}
+      {bewerkingen.length === 0 && (
+        <p style={{ color: "red" }}>
+          Er is nog geen weekbezetting geladen. Laad WB_WEEKBEZ.txt via Beheer (importeren).
+        </p>
+      )}
 
       <h3>Overzicht per machinegroep</h3>
-      <table>
+      <table style={{ borderCollapse: "collapse" }}>
         <thead>
           <tr>
-            <th>Groep</th>
-            <th>Naam</th>
-            <th>Bewerkingen</th>
-            <th>Uren</th>
-            <th>Capaciteit per week (uur)</th>
-            <th>Weken werk</th>
+            <th style={celStijl}>Groep</th>
+            <th style={celStijl}>Naam</th>
+            <th style={celStijl}>Bewerkingen</th>
+            <th style={celStijl}>Uren</th>
+            <th style={celStijl}>Capaciteit per week (uur)</th>
+            <th style={celStijl}>Weken werk</th>
+            <th style={celStijl}>Achterstand</th>
+            {komendeWeken.map((w) => (
+              <th
+                key={w}
+                style={{
+                  ...celStijl,
+                  textAlign: "center",
+                  minWidth: 70,
+                  background: w === huidigeWeek ? HUIDIGE_WEEK_KLEUR : undefined,
+                }}
+              >
+                week {w.slice(5)}
+              </th>
+            ))}
           </tr>
         </thead>
         <tbody>
           {overzicht.map((o) => (
             <tr key={o.letter || "geen"}>
-              <td>{o.letter || "-"}</td>
-              <td>{o.naam}</td>
-              <td>{o.aantal}</td>
-              <td>{o.uren.toFixed(1)}</td>
-              <td>{o.letter ? o.capa : "-"}</td>
-              <td>{o.letter && o.capa > 0 ? (o.uren / o.capa).toFixed(1) : "-"}</td>
+              <td style={midden}>{o.letter || "-"}</td>
+              <td style={celStijl}>{o.naam}</td>
+              <td style={midden}>{o.aantal}</td>
+              <td style={midden}>{o.uren.toFixed(1)}</td>
+              <td style={midden}>{o.capa > 0 ? o.capa : "-"}</td>
+              <td style={midden}>{o.capa > 0 ? (o.uren / o.capa).toFixed(1) : "-"}</td>
+              <td
+                style={{
+                  ...midden,
+                  background: o.achterstandUren > 0 ? ACHTERSTAND_KLEUR : undefined,
+                }}
+              >
+                {o.achterstandUren.toFixed(1)}
+                {o.capa > 0 && (
+                  <div style={{ fontSize: 12 }}>
+                    {(o.achterstandUren / o.capa).toFixed(1)} weken
+                  </div>
+                )}
+              </td>
+              {o.perWeek.map((uren, i) => {
+                const w = komendeWeken[i];
+                const overbelast = o.capa > 0 && uren > o.capa;
+                return (
+                  <td
+                    key={w}
+                    style={{
+                      ...midden,
+                      background: overbelast
+                        ? ACHTERSTAND_KLEUR
+                        : w === huidigeWeek
+                        ? HUIDIGE_WEEK_KLEUR
+                        : undefined,
+                    }}
+                  >
+                    {uren.toFixed(1)}
+                    {o.capa > 0 && (
+                      <div style={{ fontSize: 12 }}>{Math.round((uren / o.capa) * 100)}%</div>
+                    )}
+                  </td>
+                );
+              })}
             </tr>
           ))}
         </tbody>

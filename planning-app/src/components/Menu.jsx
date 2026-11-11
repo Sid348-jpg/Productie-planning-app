@@ -3,9 +3,8 @@ const menuItems = [
   { pagina: "orders", label: "Orders" },
   { pagina: "voorraad", label: "Voorraad" },
   { pagina: "planning", label: "Productieplanning" },
-  { pagina: "lm_mat", label: "LM_MAT Import" },
   { pagina: "tekorten", label: "Tekorten" },
-  { pagina: "import", label: "Importeren" },
+  { pagina: "beheer", label: "Beheer (importeren)" },
 ];
 
 function Menu({ setPagina }) {

@@ -8,33 +8,37 @@ import Orders from "./pages/Orders";
 import Dashboard from "./pages/Dashboard";
 import Menu from "./components/Menu";
 import Planning from "./pages/Planning";
-import LmMat from "./pages/LmMat";
-import ImportOrders from "./pages/ImportOrders";
+import Beheer from "./pages/Beheer";
+
+// Bewerkingsplaatsen die niet meer bestaan: hun uren horen bij een andere plaats
+const VERVANGEN_PLAATSEN = { FR001: "FR003" };
+
+function vervangPlaats(bewerking) {
+  const nieuw = VERVANGEN_PLAATSEN[bewerking.plaats];
+  return nieuw ? { ...bewerking, plaats: nieuw } : bewerking;
+}
 
 function App() {
-  
   const [pagina, setPagina] = useState("dashboard");
+
   const [voorraadArtikelen, setVoorraadArtikelen] = useState(() => {
-  try {
-    const opgeslagen = localStorage.getItem("voorraadArtikelen");
-    return opgeslagen ? JSON.parse(opgeslagen) : startVoorraad;
-  } catch {
-    return startVoorraad;
-  }
-});
+    try {
+      const opgeslagen = localStorage.getItem("voorraadArtikelen");
+      return opgeslagen ? JSON.parse(opgeslagen) : startVoorraad;
+    } catch {
+      return startVoorraad;
+    }
+  });
 
-useEffect(() => {
-  try {
-    localStorage.setItem(
-      "voorraadArtikelen",
-      JSON.stringify(voorraadArtikelen)
-    );
-  } catch {
-    // opslaan is mislukt, de app blijft gewoon werken
-  }
-}, [voorraadArtikelen]);
+  useEffect(() => {
+    try {
+      localStorage.setItem("voorraadArtikelen", JSON.stringify(voorraadArtikelen));
+    } catch {
+      // opslaan is mislukt, de app blijft gewoon werken
+    }
+  }, [voorraadArtikelen]);
 
-const [orders, setOrders] = useState(() => {
+  const [orders, setOrders] = useState(() => {
     try {
       const opgeslagen = localStorage.getItem("orders");
       return opgeslagen ? JSON.parse(opgeslagen) : startOrders;
@@ -51,8 +55,29 @@ const [orders, setOrders] = useState(() => {
     }
   }, [orders]);
 
+  // Weekbezetting (uit WB_WEEKBEZ.txt), onthouden onder dezelfde naam als eerst
+  const [weekbezetting, setWeekbezettingRuw] = useState(() => {
+    try {
+      const opgeslagen = localStorage.getItem("weekbezetting");
+      return opgeslagen ? JSON.parse(opgeslagen).map(vervangPlaats) : [];
+    } catch {
+      return [];
+    }
+  });
 
-  const [tekorten,setTekorten] = useState([]);
+  useEffect(() => {
+    try {
+      localStorage.setItem("weekbezetting", JSON.stringify(weekbezetting));
+    } catch {
+      // opslaan is mislukt, de app blijft gewoon werken
+    }
+  }, [weekbezetting]);
+
+  function setWeekbezetting(lijst) {
+    setWeekbezettingRuw(lijst.map(vervangPlaats));
+  }
+
+  const [tekorten, setTekorten] = useState([]);
 
   return (
     <div
@@ -62,7 +87,6 @@ const [orders, setOrders] = useState(() => {
         fontFamily: "Arial, sans-serif",
       }}
     >
-      
       <Menu setPagina={setPagina} />
 
       <div
@@ -76,41 +100,37 @@ const [orders, setOrders] = useState(() => {
           {pagina === "orders" && "Orders"}
           {pagina === "voorraad" && "Voorraad"}
           {pagina === "planning" && "Productieplanning"}
-          {pagina === "lm_mat" && "LM_MAT Import"}
           {pagina === "tekorten" && "Tekorten"}
-          {pagina === "import" && "Importeren"}
+          {pagina === "beheer" && "Beheer"}
         </h1>
 
+        {pagina === "orders" && (
+          <Orders orders={orders} voorraadArtikelen={voorraadArtikelen} />
+        )}
 
-       {pagina === "orders" && (
-  <Orders orders={orders} voorraadArtikelen={voorraadArtikelen} />
-)} 
+        {pagina === "voorraad" && (
+          <Voorraad voorraadArtikelen={voorraadArtikelen} />
+        )}
 
-{pagina === "voorraad" && (
-  <Voorraad voorraadArtikelen={voorraadArtikelen} />
-)}
+        {pagina === "dashboard" && (
+          <Dashboard orders={orders} voorraadArtikelen={voorraadArtikelen} />
+        )}
 
-{pagina === "dashboard" && (
-  <Dashboard orders={orders} voorraadArtikelen={voorraadArtikelen} />
-)}
+        {pagina === "planning" && <Planning bewerkingen={weekbezetting} />}
 
-
-        {pagina === "planning" && <Planning />}
-
-        {pagina === "lm_mat" && (
-  <LmMat voorraadArtikelen={voorraadArtikelen} 
-  setVoorraadArtikelen={setVoorraadArtikelen}
-  />
-)}
-
-{pagina === "import" && (
-  <ImportOrders aantalOrders={orders.length} setOrders={setOrders} />
-)}
+        {pagina === "beheer" && (
+          <Beheer
+            orders={orders}
+            setOrders={setOrders}
+            voorraadArtikelen={voorraadArtikelen}
+            setVoorraadArtikelen={setVoorraadArtikelen}
+            weekbezetting={weekbezetting}
+            setWeekbezetting={setWeekbezetting}
+          />
+        )}
       </div>
     </div>
   );
 }
-
-
 
 export default App;
