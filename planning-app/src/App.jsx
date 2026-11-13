@@ -21,6 +21,7 @@ function vervangPlaats(bewerking) {
   const nieuw = VERVANGEN_PLAATSEN[bewerking.plaats];
   return nieuw ? { ...bewerking, plaats: nieuw } : bewerking;
 }
+const BEHEERDER_EMAIL = "siddiq.klein@degierdrivesystems.com";
 
 function App() {
   const [pagina, setPagina] = useState("dashboard");
@@ -206,7 +207,10 @@ function App() {
         fontFamily: "Arial, sans-serif",
       }}
     >
-      <Menu setPagina={setPagina} />
+      <Menu
+  setPagina={setPagina}
+  isBeheerder={sessie?.user?.email?.toLowerCase() === BEHEERDER_EMAIL.toLowerCase()}
+/>
 
       <div
         style={{

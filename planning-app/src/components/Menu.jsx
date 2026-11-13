@@ -5,10 +5,14 @@ const menuItems = [
   { pagina: "planning", label: "Productieplanning" },
   { pagina: "benutting", label: "Benutting" },
   { pagina: "tekorten", label: "Tekorten" },
-  { pagina: "beheer", label: "Beheer (importeren)" },
+  { pagina: "beheer", label: "Beheer (importeren)", alleenBeheerder: true },
 ];
 
-function Menu({ setPagina }) {
+function Menu({ setPagina, isBeheerder }) {
+  const zichtbareItems = menuItems.filter(
+    (item) => !item.alleenBeheerder || isBeheerder
+  );
+
   return (
     <div
       style={{
@@ -24,7 +28,7 @@ function Menu({ setPagina }) {
 
       <hr />
 
-      {menuItems.map((item) => (
+      {zichtbareItems.map((item) => (
         <p
           key={item.pagina}
           style={{ cursor: "pointer" }}
