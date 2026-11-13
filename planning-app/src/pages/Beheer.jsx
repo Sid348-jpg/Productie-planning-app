@@ -2,6 +2,7 @@ import { useState } from "react";
 import LmMat from "./LmMat";
 import ImportOrders from "./ImportOrders";
 import { leesWeekbezetting } from "../utils/leesWeekbezetting";
+import { leesTijdregistratie } from "../utils/leesTijdregistratie";
 
 function Beheer({
   orders,
@@ -10,6 +11,8 @@ function Beheer({
   setVoorraadArtikelen,
   weekbezetting,
   setWeekbezetting,
+  geproduceerd,
+  setGeproduceerd,
 }) {
   const [fout, setFout] = useState("");
   const [melding, setMelding] = useState("");
@@ -29,6 +32,33 @@ function Beheer({
     } catch (e) {
       setFout(e.message);
       setMelding("");
+    }
+    event.target.value = "";
+  }
+  const [foutUren, setFoutUren] = useState("");
+  const [meldingUren, setMeldingUren] = useState("");
+
+  async function bijGeproduceerdKiezen(event) {
+    const bestand = event.target.files[0];
+    if (!bestand) return;
+    try {
+      const lijst = await leesTijdregistratie(bestand);
+      setGeproduceerd(lijst);
+      const totaal = lijst.reduce((som, r) => som + r.uren, 0);
+      setFoutUren("");
+      setMeldingUren(
+        lijst.length +
+          " regels geladen (" +
+          totaal.toLocaleString("nl-NL", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          }) +
+          " uur) uit " +
+          bestand.name
+      );
+    } catch (e) {
+      setFoutUren(e.message);
+      setMeldingUren("");
     }
     event.target.value = "";
   }
@@ -55,6 +85,19 @@ function Beheer({
       {fout && <p style={{ color: "red" }}>{fout}</p>}
       {melding && <p style={{ color: "green" }}>{melding}</p>}
       <p>Nu in de app: {weekbezetting.length} bewerkingen</p>
+
+      <hr />
+      
+      <h2>Geproduceerde uren importeren</h2>
+      <p>
+        <strong>Te laden bestand: AO_TIJDR.txt</strong>
+      </p>
+      <p>
+        <input type="file" accept=".txt" onChange={bijGeproduceerdKiezen} />
+      </p>
+      {foutUren && <p style={{ color: "red" }}>{foutUren}</p>}
+      {meldingUren && <p style={{ color: "green" }}>{meldingUren}</p>}
+      <p>Nu in de app: {geproduceerd.length} regels</p>
 
       <hr />
 

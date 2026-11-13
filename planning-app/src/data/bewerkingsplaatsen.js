@@ -24,7 +24,7 @@ export const bewerkingsplaatsen = [
   { plaats: "DR002", groep: "", omschrijving: "Draaien Monfort RNC4, assen", weekCapa: 0 },
   { plaats: "DR003", groep: "A", omschrijving: "Sprint 50", weekCapa: 60 },
   { plaats: "DR004", groep: "A", omschrijving: "Sprint 65-1", weekCapa: 60 },
-  { plaats: "DR0041", groep: "A", omschrijving: "Sprint 65-3", weekCapa: 60 },
+  
   { plaats: "DR0042", groep: "A", omschrijving: "Sprint 65-2/3", weekCapa: 120 },
   { plaats: "DR0043", groep: "A", omschrijving: "Star SR38", weekCapa: 120 },
   { plaats: "DR005", groep: "A", omschrijving: "CTX400", weekCapa: 20 },
@@ -67,7 +67,7 @@ export const bewerkingsplaatsen = [
 // Staat een plaats hier niet in, dan komt hij daarna, op volgorde van code.
 export const weergaveVolgorde = [
   // A - Draaien
-  "DR003", "DR004", "DR0041", "DR0042", "DR0043", "DR005",
+   "DR003", "DR004", "DR0042", "DR0043", "DR005",
   // B - Eisele - Emag
   "ZG001", "ZG003", "DR001",
   // C - Hec's - Afpers

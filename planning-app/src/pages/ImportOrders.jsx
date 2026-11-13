@@ -9,11 +9,16 @@ function ImportOrders({ aantalOrders, setOrders }) {
 
     const reader = new FileReader();
 
-    reader.onload = (event) => {
-      const nieuweOrders = leesProductieorders(event.target.result);
-      setOrders(nieuweOrders);
-      alert(`${nieuweOrders.length} orders geïmporteerd uit ${bestand.name}`);
-    };
+       reader.onload = async (event) => {
+     const nieuweOrders = leesProductieorders(event.target.result);
+     const gelukt = await setOrders(nieuweOrders);
+     alert(
+       `${nieuweOrders.length} orders geïmporteerd uit ${bestand.name}` +
+         (gelukt
+           ? "\nBewaard in Supabase."
+           : "\nLET OP: NIET bewaard in Supabase.")
+     );
+   };
 
     reader.readAsText(bestand);
   };
