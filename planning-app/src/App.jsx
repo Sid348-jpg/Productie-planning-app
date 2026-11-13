@@ -156,6 +156,36 @@ function App() {
      setVoorraadArtikelen(lijst);
      return bewaarGegevens("voorraad", lijst);
    }
+      // Na het inloggen: weekbezetting ophalen uit Supabase
+   useEffect(() => {
+     if (!sessie) return;
+     laadGegevens("weekbezetting").then((opgeslagen) => {
+       if (opgeslagen) setWeekbezettingRuw(opgeslagen.map(vervangPlaats));
+     });
+   }, [sessie?.user?.id]);
+
+   // Nieuwe weekbezetting: in de app zetten én in Supabase bewaren
+   function setWeekbezettingEnBewaar(lijst) {
+     const gecorrigeerd = lijst.map(vervangPlaats);
+     setWeekbezettingRuw(gecorrigeerd);
+     return bewaarGegevens("weekbezetting", gecorrigeerd);
+   }
+      // Na het inloggen: geproduceerde uren ophalen uit Supabase
+   useEffect(() => {
+     if (!sessie) return;
+     laadGegevens("geproduceerd").then((opgeslagen) => {
+       if (opgeslagen) setGeproduceerdRuw(opgeslagen.map(vervangPlaatsUren));
+     });
+   }, [sessie?.user?.id]);
+
+   // Nieuwe uren: in de app zetten én in Supabase bewaren
+   function setGeproduceerdEnBewaar(nieuweLijst) {
+     const nieuweWeken = new Set(nieuweLijst.map((r) => r.jaarWeek));
+     const behouden = geproduceerd.filter((r) => !nieuweWeken.has(r.jaarWeek));
+     const totaal = [...behouden, ...nieuweLijst].map(vervangPlaatsUren);
+     setGeproduceerdRuw(totaal);
+     return bewaarGegevens("geproduceerd", totaal);
+   }
      if (!sessieGeladen) {
      return (
        <div style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
@@ -229,9 +259,9 @@ function App() {
             voorraadArtikelen={voorraadArtikelen}
                setVoorraadArtikelen={setVoorraadEnBewaar}
             weekbezetting={weekbezetting}
-            setWeekbezetting={setWeekbezetting}
+           setWeekbezetting={setWeekbezettingEnBewaar}
             geproduceerd={geproduceerd}
-            setGeproduceerd={setGeproduceerd}
+               setGeproduceerd={setGeproduceerdEnBewaar}
           />
         )}
       </div>
