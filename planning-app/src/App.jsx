@@ -10,6 +10,7 @@ import Menu from "./components/Menu";
 import Planning from "./pages/Planning";
 import Beheer from "./pages/Beheer";
 import Benutting from "./pages/Benutting";
+import Afkeur from "./pages/Afkeur";
 import Login from "./pages/Login";
 import { supabase } from "./supabaseClient";
 import { laadGegevens, bewaarGegevens } from "./utils/opslag";
@@ -25,23 +26,23 @@ const BEHEERDER_EMAIL = "siddiq.klein@degierdrivesystems.com";
 
 function App() {
   const [pagina, setPagina] = useState("dashboard");
-     const [sessie, setSessie] = useState(null);
-   const [sessieGeladen, setSessieGeladen] = useState(false);
+  const [sessie, setSessie] = useState(null);
+  const [sessieGeladen, setSessieGeladen] = useState(false);
 
-   useEffect(() => {
-     supabase.auth.getSession().then(({ data }) => {
-       setSessie(data.session);
-       setSessieGeladen(true);
-     });
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setSessie(data.session);
+      setSessieGeladen(true);
+    });
 
-     const { data: abonnement } = supabase.auth.onAuthStateChange(
-       (_event, nieuweSessie) => {
-         setSessie(nieuweSessie);
-       }
-     );
+    const { data: abonnement } = supabase.auth.onAuthStateChange(
+      (_event, nieuweSessie) => {
+        setSessie(nieuweSessie);
+      }
+    );
 
-     return () => abonnement.subscription.unsubscribe();
-   }, []);
+    return () => abonnement.subscription.unsubscribe();
+  }, []);
 
   const [voorraadArtikelen, setVoorraadArtikelen] = useState(() => {
     try {
@@ -98,6 +99,7 @@ function App() {
   function setWeekbezetting(lijst) {
     setWeekbezettingRuw(lijst.map(vervangPlaats));
   }
+
   // Geproduceerde uren (uit AO_TIJDR.txt), onthouden in de browser
   function vervangPlaatsUren(regel) {
     const nieuw = VERVANGEN_PLAATSEN[regel.bewerkingsplaats];
@@ -121,83 +123,92 @@ function App() {
     }
   }, [geproduceerd]);
 
-   // Nieuwe import: oude weken blijven bewaard, een opnieuw geïmporteerde week wordt vervangen
+  // Nieuwe import: oude weken blijven bewaard, een opnieuw geïmporteerde week wordt vervangen
   function setGeproduceerd(nieuweLijst) {
     const nieuweWeken = new Set(nieuweLijst.map((r) => r.jaarWeek));
     const behouden = geproduceerd.filter((r) => !nieuweWeken.has(r.jaarWeek));
     setGeproduceerdRuw([...behouden, ...nieuweLijst].map(vervangPlaatsUren));
   }
+
   const [tekorten, setTekorten] = useState([]);
-     // Na het inloggen: orders ophalen uit Supabase
-   useEffect(() => {
-     if (!sessie) return;
-     laadGegevens("orders").then((opgeslagen) => {
-       if (opgeslagen) setOrders(opgeslagen);
-     });
-   }, [sessie?.user?.id]);
 
-   // Nieuwe orders: in de app zetten én in Supabase bewaren
-      function setOrdersEnBewaar(nieuw) {
-     const lijst = typeof nieuw === "function" ? nieuw(orders) : nieuw;
-     setOrders(lijst);
-     return bewaarGegevens("orders", lijst);
-   }
-      // Na het inloggen: voorraad ophalen uit Supabase
-   useEffect(() => {
-     if (!sessie) return;
-     laadGegevens("voorraad").then((opgeslagen) => {
-       if (opgeslagen) setVoorraadArtikelen(opgeslagen);
-     });
-   }, [sessie?.user?.id]);
+  // Na het inloggen: orders ophalen uit Supabase
+  useEffect(() => {
+    if (!sessie) return;
+    laadGegevens("orders").then((opgeslagen) => {
+      if (opgeslagen) setOrders(opgeslagen);
+    });
+  }, [sessie?.user?.id]);
 
-   // Nieuwe voorraad: in de app zetten én in Supabase bewaren
-   function setVoorraadEnBewaar(nieuw) {
-     const lijst =
-       typeof nieuw === "function" ? nieuw(voorraadArtikelen) : nieuw;
-     setVoorraadArtikelen(lijst);
-     return bewaarGegevens("voorraad", lijst);
-   }
-      // Na het inloggen: weekbezetting ophalen uit Supabase
-   useEffect(() => {
-     if (!sessie) return;
-     laadGegevens("weekbezetting").then((opgeslagen) => {
-       if (opgeslagen) setWeekbezettingRuw(opgeslagen.map(vervangPlaats));
-     });
-   }, [sessie?.user?.id]);
+  // Nieuwe orders: in de app zetten én in Supabase bewaren
+  function setOrdersEnBewaar(nieuw) {
+    const lijst = typeof nieuw === "function" ? nieuw(orders) : nieuw;
+    setOrders(lijst);
+    return bewaarGegevens("orders", lijst);
+  }
 
-   // Nieuwe weekbezetting: in de app zetten én in Supabase bewaren
-   function setWeekbezettingEnBewaar(lijst) {
-     const gecorrigeerd = lijst.map(vervangPlaats);
-     setWeekbezettingRuw(gecorrigeerd);
-     return bewaarGegevens("weekbezetting", gecorrigeerd);
-   }
-      // Na het inloggen: geproduceerde uren ophalen uit Supabase
-   useEffect(() => {
-     if (!sessie) return;
-     laadGegevens("geproduceerd").then((opgeslagen) => {
-       if (opgeslagen) setGeproduceerdRuw(opgeslagen.map(vervangPlaatsUren));
-     });
-   }, [sessie?.user?.id]);
+  // Na het inloggen: voorraad ophalen uit Supabase
+  useEffect(() => {
+    if (!sessie) return;
+    laadGegevens("voorraad").then((opgeslagen) => {
+      if (opgeslagen) setVoorraadArtikelen(opgeslagen);
+    });
+  }, [sessie?.user?.id]);
 
-   // Nieuwe uren: in de app zetten én in Supabase bewaren
-   function setGeproduceerdEnBewaar(nieuweLijst) {
-     const nieuweWeken = new Set(nieuweLijst.map((r) => r.jaarWeek));
-     const behouden = geproduceerd.filter((r) => !nieuweWeken.has(r.jaarWeek));
-     const totaal = [...behouden, ...nieuweLijst].map(vervangPlaatsUren);
-     setGeproduceerdRuw(totaal);
-     return bewaarGegevens("geproduceerd", totaal);
-   }
-     if (!sessieGeladen) {
-     return (
-       <div style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
-         Laden...
-       </div>
-     );
-   }
+  // Nieuwe voorraad: in de app zetten én in Supabase bewaren
+  function setVoorraadEnBewaar(nieuw) {
+    const lijst =
+      typeof nieuw === "function" ? nieuw(voorraadArtikelen) : nieuw;
+    setVoorraadArtikelen(lijst);
+    return bewaarGegevens("voorraad", lijst);
+  }
 
-   if (!sessie) {
-     return <Login />;
-   }
+  // Na het inloggen: weekbezetting ophalen uit Supabase
+  useEffect(() => {
+    if (!sessie) return;
+    laadGegevens("weekbezetting").then((opgeslagen) => {
+      if (opgeslagen) setWeekbezettingRuw(opgeslagen.map(vervangPlaats));
+    });
+  }, [sessie?.user?.id]);
+
+  // Nieuwe weekbezetting: in de app zetten én in Supabase bewaren
+  function setWeekbezettingEnBewaar(lijst) {
+    const gecorrigeerd = lijst.map(vervangPlaats);
+    setWeekbezettingRuw(gecorrigeerd);
+    return bewaarGegevens("weekbezetting", gecorrigeerd);
+  }
+
+  // Na het inloggen: geproduceerde uren ophalen uit Supabase
+  useEffect(() => {
+    if (!sessie) return;
+    laadGegevens("geproduceerd").then((opgeslagen) => {
+      if (opgeslagen) setGeproduceerdRuw(opgeslagen.map(vervangPlaatsUren));
+    });
+  }, [sessie?.user?.id]);
+
+  // Nieuwe uren: in de app zetten én in Supabase bewaren
+  function setGeproduceerdEnBewaar(nieuweLijst) {
+    const nieuweWeken = new Set(nieuweLijst.map((r) => r.jaarWeek));
+    const behouden = geproduceerd.filter((r) => !nieuweWeken.has(r.jaarWeek));
+    const totaal = [...behouden, ...nieuweLijst].map(vervangPlaatsUren);
+    setGeproduceerdRuw(totaal);
+    return bewaarGegevens("geproduceerd", totaal);
+  }
+
+  if (!sessieGeladen) {
+    return (
+      <div style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
+        Laden...
+      </div>
+    );
+  }
+
+  if (!sessie) {
+    return <Login />;
+  }
+
+  const isBeheerder =
+    sessie?.user?.email?.toLowerCase() === BEHEERDER_EMAIL.toLowerCase();
 
   return (
     <div
@@ -207,28 +218,26 @@ function App() {
         fontFamily: "Arial, sans-serif",
       }}
     >
-      <Menu
-  setPagina={setPagina}
-  isBeheerder={sessie?.user?.email?.toLowerCase() === BEHEERDER_EMAIL.toLowerCase()}
-/>
+      <Menu setPagina={setPagina} isBeheerder={isBeheerder} />
 
       <div
         style={{
           flex: 1,
           padding: "20px",
         }}
-      >   <div style={{ textAlign: "right" }}>
-     <button
-       onClick={() => supabase.auth.signOut()}
-       style={{
-         padding: "6px 12px",
-         fontSize: "13px",
-         cursor: "pointer",
-       }}
-     >
-       Uitloggen
-     </button>
-   </div>
+      >
+        <div style={{ textAlign: "right" }}>
+          <button
+            onClick={() => supabase.auth.signOut()}
+            style={{
+              padding: "6px 12px",
+              fontSize: "13px",
+              cursor: "pointer",
+            }}
+          >
+            Uitloggen
+          </button>
+        </div>
 
         <h1>
           {pagina === "dashboard" && "Dashboard"}
@@ -236,6 +245,7 @@ function App() {
           {pagina === "voorraad" && "Voorraad"}
           {pagina === "planning" && "Productieplanning"}
           {pagina === "benutting" && "Benutting capaciteit"}
+          {pagina === "afkeur" && "Afkeur"}
           {pagina === "tekorten" && "Tekorten"}
           {pagina === "beheer" && "Beheer"}
         </h1>
@@ -253,24 +263,23 @@ function App() {
         )}
 
         {pagina === "planning" && (
-  <Planning
-    bewerkingen={weekbezetting}
-    isBeheerder={sessie?.user?.email?.toLowerCase() === BEHEERDER_EMAIL.toLowerCase()}
-  />
-)}
+          <Planning bewerkingen={weekbezetting} isBeheerder={isBeheerder} />
+        )}
 
-       {pagina === "benutting" && <Benutting geproduceerd={geproduceerd} />}
+        {pagina === "benutting" && <Benutting geproduceerd={geproduceerd} />}
+
+        {pagina === "afkeur" && <Afkeur voorraadArtikelen={voorraadArtikelen} />}
 
         {pagina === "beheer" && (
           <Beheer
             orders={orders}
-           setOrders={setOrdersEnBewaar}
+            setOrders={setOrdersEnBewaar}
             voorraadArtikelen={voorraadArtikelen}
-               setVoorraadArtikelen={setVoorraadEnBewaar}
+            setVoorraadArtikelen={setVoorraadEnBewaar}
             weekbezetting={weekbezetting}
-           setWeekbezetting={setWeekbezettingEnBewaar}
+            setWeekbezetting={setWeekbezettingEnBewaar}
             geproduceerd={geproduceerd}
-               setGeproduceerd={setGeproduceerdEnBewaar}
+            setGeproduceerd={setGeproduceerdEnBewaar}
           />
         )}
       </div>

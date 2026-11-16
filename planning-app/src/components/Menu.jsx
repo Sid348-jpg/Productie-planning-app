@@ -4,6 +4,7 @@ const menuItems = [
   { pagina: "voorraad", label: "Voorraad" },
   { pagina: "planning", label: "Productieplanning" },
   { pagina: "benutting", label: "Benutting" },
+  { pagina: "afkeur", label: "Afkeur" },
   { pagina: "tekorten", label: "Tekorten" },
   { pagina: "beheer", label: "Beheer (importeren)", alleenBeheerder: true },
 ];
