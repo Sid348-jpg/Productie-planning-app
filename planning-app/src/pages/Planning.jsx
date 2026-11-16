@@ -3,6 +3,7 @@ import { supabase } from "../supabaseClient";
 import { bewerkingsplaatsen, groepNamen, weergaveVolgorde } from "../data/bewerkingsplaatsen";
 import AfkeurPopup from "../components/AfkeurPopup";
 import GereedBeheer from "../components/GereedBeheer";
+import OrderActie from "../components/OrderActie";
 
 // Zoekt per bewerkingsplaats de gegevens uit de Excel op
 const plaatsInfo = {};
@@ -60,6 +61,7 @@ export function Planning({ bewerkingen = [], isBeheerder = false }) {
   const [gekozenGroep, setGekozenGroep] = useState("alle");
   const [afkeurVoor, setAfkeurVoor] = useState(null);
   const [beheerVoor, setBeheerVoor] = useState(null);
+  const [actieVoor, setActieVoor] = useState(null);
   const [gereedOrders, setGereedOrders] = useState([]);
 
 async function laadGereed() {
@@ -299,7 +301,7 @@ useEffect(() => {
   if (gereedOrders.includes(String(b.productienummer))) {
     if (isBeheerder) setBeheerVoor(order);
   } else {
-    setAfkeurVoor(order);
+    setActieVoor(order);
   }
 }}
   title="Afkeur registreren"
@@ -337,6 +339,26 @@ useEffect(() => {
           artikelnummer={afkeurVoor.artikel}
           onClose={() => setAfkeurVoor(null)}
           onOpgeslagen={laadGereed}
+          startMachine={afkeurVoor.machine}
+          startOperator={afkeurVoor.operator}
+          startGereed={afkeurVoor.gereed}
+        />
+      )}
+      {actieVoor && (
+        <OrderActie
+          productieordernr={actieVoor.productieordernr}
+          artikelnummer={actieVoor.artikel}
+          onClose={() => setActieVoor(null)}
+          onGereed={(run) => {
+            setActieVoor(null);
+            setAfkeurVoor({
+              productieordernr: actieVoor.productieordernr,
+              artikel: actieVoor.artikel,
+              machine: run.machine,
+              operator: run.operator,
+              gereed: true,
+            });
+          }}
         />
       )}
       {beheerVoor && (

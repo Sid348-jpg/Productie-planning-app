@@ -18,13 +18,21 @@ const veld = {
 };
 const label = { fontSize: "13px", color: "#555", marginBottom: "4px", display: "block" };
 
-export default function AfkeurPopup({ productieordernr, artikelnummer, onClose, onOpgeslagen }) {
-  const [operator, setOperator] = useState("");
-  const [machine, setMachine] = useState("");
+export default function AfkeurPopup({
+  productieordernr,
+  artikelnummer,
+  onClose,
+  onOpgeslagen,
+  startMachine = "",
+  startOperator = "",
+  startGereed = false,
+}) {
+const [operator, setOperator] = useState(startOperator);
+    const [machine, setMachine] = useState(startMachine);
   const [controleDoor, setControleDoor] = useState("");
   const [aantalGoed, setAantalGoed] = useState("");
   const [regels, setRegels] = useState([{ oorzaak: "", aantal: "" }]);
-  const [gereed, setGereed] = useState(false);
+    const [gereed, setGereed] = useState(startGereed);
   const [namen, setNamen] = useState([]);
   const [melding, setMelding] = useState("");
   const [bezig, setBezig] = useState(false);
