@@ -259,7 +259,7 @@ function App() {
         )}
 
         {pagina === "dashboard" && (
-          <Dashboard orders={orders} voorraadArtikelen={voorraadArtikelen} />
+          <Dashboard orders={orders} voorraadArtikelen={voorraadArtikelen} setPagina={setPagina} />
         )}
 
         {pagina === "planning" && (

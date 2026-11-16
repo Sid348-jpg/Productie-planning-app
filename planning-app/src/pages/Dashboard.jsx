@@ -1,7 +1,40 @@
+import { useEffect, useState } from "react";
 import { kaartStyle } from "../styles";
 import { bepaalPrioriteit } from "../utils/prioriteit";
+import { supabase } from "../supabaseClient";
 
-function Dashboard({ orders, voorraadArtikelen }) {
+function Tegel({ titel, waarde, extra, naarPagina, setPagina }) {
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      title="Openen"
+      style={{ ...kaartStyle, cursor: "pointer" }}
+      onClick={() => setPagina(naarPagina)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") setPagina(naarPagina);
+      }}
+    >
+      <h3>{titel}</h3>
+      <p>{waarde}</p>
+      {extra && <p style={{ fontSize: "13px", color: "#555" }}>{extra}</p>}
+    </div>
+  );
+}
+
+function Dashboard({ orders, voorraadArtikelen, setPagina }) {
+  const [afkeurRegels, setAfkeurRegels] = useState([]);
+
+  useEffect(() => {
+    async function laad() {
+      const { data } = await supabase
+        .from("afkeur_registraties")
+        .select("artikelnummer, aantal_goed, totaal_afkeur");
+      setAfkeurRegels(data || []);
+    }
+    laad();
+  }, []);
+
   const openOrders = orders.length;
 
   const kritiekeOrders = orders.filter(
@@ -22,6 +55,27 @@ function Dashboard({ orders, voorraadArtikelen }) {
       a.voorraad - a.reserveringen < a.minimum
   ).length;
 
+  // Afkeur: totaal percentage en kosten
+  const kostprijsPer = {};
+  voorraadArtikelen.forEach((a) => {
+    kostprijsPer[a.artikelnummer] = a.kostprijs || 0;
+  });
+  const totaalGoed = afkeurRegels.reduce((s, r) => s + (r.aantal_goed || 0), 0);
+  const totaalAfkeur = afkeurRegels.reduce((s, r) => s + (r.totaal_afkeur || 0), 0);
+  const afkeurKosten = afkeurRegels.reduce(
+    (s, r) => s + (r.totaal_afkeur || 0) * (kostprijsPer[r.artikelnummer] || 0),
+    0
+  );
+  const totaal = totaalGoed + totaalAfkeur;
+  const afkeurProcent = totaal > 0 ? (totaalAfkeur / totaal) * 100 : 0;
+  const afkeurTekst = afkeurProcent.toFixed(1).replace(".", ",") + "%";
+  const kostenTekst =
+    "€ " +
+    afkeurKosten.toLocaleString("nl-NL", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+
   return (
     <div
       style={{
@@ -31,30 +85,18 @@ function Dashboard({ orders, voorraadArtikelen }) {
         marginBottom: "30px",
       }}
     >
-      <div style={kaartStyle}>
-        <h3>Open Orders</h3>
-        <p>{openOrders}</p>
-      </div>
-
-      <div style={kaartStyle}>
-        <h3>Kritieke Orders</h3>
-        <p>{kritiekeOrders}</p>
-      </div>
-
-      <div style={kaartStyle}>
-        <h3>Achterstallige Orders</h3>
-        <p>{achterstalligeOrders}</p>
-      </div>
-
-      <div style={kaartStyle}>
-        <h3>Negatieve Voorraad</h3>
-        <p>{negatieveVoorraad}</p>
-      </div>
-
-      <div style={kaartStyle}>
-        <h3>Onder Minimum</h3>
-        <p>{onderMinimum}</p>
-      </div>
+      <Tegel titel="Open Orders" waarde={openOrders} naarPagina="orders" setPagina={setPagina} />
+      <Tegel titel="Kritieke Orders" waarde={kritiekeOrders} naarPagina="orders" setPagina={setPagina} />
+      <Tegel titel="Achterstallige Orders" waarde={achterstalligeOrders} naarPagina="orders" setPagina={setPagina} />
+      <Tegel titel="Negatieve Voorraad" waarde={negatieveVoorraad} naarPagina="voorraad" setPagina={setPagina} />
+      <Tegel titel="Onder Minimum" waarde={onderMinimum} naarPagina="voorraad" setPagina={setPagina} />
+      <Tegel
+        titel="Afkeur"
+        waarde={afkeurTekst}
+        extra={totaalAfkeur + " afkeur · " + kostenTekst}
+        naarPagina="afkeur"
+        setPagina={setPagina}
+      />
     </div>
   );
 }
