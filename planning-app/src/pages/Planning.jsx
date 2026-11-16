@@ -1,5 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "../supabaseClient";
 import { bewerkingsplaatsen, groepNamen, weergaveVolgorde } from "../data/bewerkingsplaatsen";
+import AfkeurPopup from "../components/AfkeurPopup";
+import GereedBeheer from "../components/GereedBeheer";
 
 // Zoekt per bewerkingsplaats de gegevens uit de Excel op
 const plaatsInfo = {};
@@ -53,8 +56,23 @@ const ACHTERSTAND_KLEUR = "#ff9a9a";
 const WEEK_BREEDTE = 44;
 const DIKKE_LIJN = "3px solid #333";
 
-export function Planning({ bewerkingen = [] }) {
+export function Planning({ bewerkingen = [], isBeheerder = false }) {
   const [gekozenGroep, setGekozenGroep] = useState("alle");
+  const [afkeurVoor, setAfkeurVoor] = useState(null);
+  const [beheerVoor, setBeheerVoor] = useState(null);
+  const [gereedOrders, setGereedOrders] = useState([]);
+
+async function laadGereed() {
+  const { data } = await supabase
+    .from("afkeur_registraties")
+    .select("productieordernr")
+    .eq("gereed", true);
+  setGereedOrders((data || []).map((r) => r.productieordernr));
+}
+
+useEffect(() => {
+  laadGereed();
+}, []);
 
   // De actuele week en de 3 weken erna
   const vandaag = new Date();
@@ -266,7 +284,28 @@ export function Planning({ bewerkingen = [] }) {
                   <td style={{ ...celStijl, ...lijn, textAlign: "center" }}>
                     {groepVan(b.plaats) || "-"}
                   </td>
-                  <td style={{ ...celStijl, ...lijn }}>{b.artikel}</td>
+                  <td
+  style={{
+    ...celStijl,
+    ...lijn,
+    cursor: "pointer",
+    color: gereedOrders.includes(String(b.productienummer)) ? "#888" : "#0b57d0",
+    textDecoration: gereedOrders.includes(String(b.productienummer))
+      ? "line-through"
+      : "underline",
+  }}
+  onClick={() => {
+  const order = { productieordernr: b.productienummer, artikel: b.artikel };
+  if (gereedOrders.includes(String(b.productienummer))) {
+    if (isBeheerder) setBeheerVoor(order);
+  } else {
+    setAfkeurVoor(order);
+  }
+}}
+  title="Afkeur registreren"
+>
+  {b.artikel}
+</td>
                   <td style={{ ...celStijl, ...lijn }}>{korteDatum(b.startVolgend)}</td>
                   <td style={{ ...celStijl, ...lijn, textAlign: "right" }}>{b.uren.toFixed(1)}</td>
                   {weken.map((w) => {
@@ -292,6 +331,22 @@ export function Planning({ bewerkingen = [] }) {
           </tbody>
         </table>
       </div>
+            {afkeurVoor && (
+        <AfkeurPopup
+          productieordernr={afkeurVoor.productieordernr}
+          artikelnummer={afkeurVoor.artikel}
+          onClose={() => setAfkeurVoor(null)}
+          onOpgeslagen={laadGereed}
+        />
+      )}
+      {beheerVoor && (
+  <GereedBeheer
+    productieordernr={beheerVoor.productieordernr}
+    artikelnummer={beheerVoor.artikel}
+    onClose={() => setBeheerVoor(null)}
+    onWijziging={laadGereed}
+  />
+)}
     </div>
   );
 }

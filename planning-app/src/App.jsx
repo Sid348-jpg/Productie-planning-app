@@ -252,7 +252,12 @@ function App() {
           <Dashboard orders={orders} voorraadArtikelen={voorraadArtikelen} />
         )}
 
-        {pagina === "planning" && <Planning bewerkingen={weekbezetting} />}
+        {pagina === "planning" && (
+  <Planning
+    bewerkingen={weekbezetting}
+    isBeheerder={sessie?.user?.email?.toLowerCase() === BEHEERDER_EMAIL.toLowerCase()}
+  />
+)}
 
        {pagina === "benutting" && <Benutting geproduceerd={geproduceerd} />}
 

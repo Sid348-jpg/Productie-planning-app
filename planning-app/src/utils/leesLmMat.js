@@ -31,6 +31,8 @@ export const leesLmMat = (inhoud) => {
         voorraad: parseGetal(rij["Voorraad"]),
         reserveringen: parseGetal(rij["Reserveringen"]),
         minimum: parseGetal(rij["Min.Voorr"]),
+        kostprijs: parseGetal(rij["Kostprijs"]),
+        verkoopprijs: parseGetal(rij["Verkoopprijs"]),
       };
     })
     .filter((artikel) => artikel.artikelnummer);
