@@ -27,12 +27,48 @@ function tijd(t) {
   });
 }
 
-export default function OrderActie({ productieordernr, artikelnummer, onClose, onGewijzigd, onGereed }) {
+// Een datum omzetten naar het formaat van het invoerveld (lokale tijd)
+function naarLokaal(datum) {
+  const d = new Date(datum.getTime());
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+  return d.toISOString().slice(0, 16);
+}
+
+// Huidige datum en tijd in het formaat van het invoerveld
+function lokaalNu() {
+  return naarLokaal(new Date());
+}
+
+// De starttijd een aantal minuten verschuiven (nooit later dan nu)
+function verschuif(waarde, minuten) {
+  const d = new Date(waarde);
+  if (isNaN(d.getTime())) return lokaalNu();
+  d.setMinutes(d.getMinutes() + minuten);
+  if (d.getTime() > Date.now()) return lokaalNu();
+  return naarLokaal(d);
+}
+
+const knop = { padding: "8px 10px", cursor: "pointer", flex: 1 };
+
+export default function OrderActie({
+  productieordernr,
+  artikelnummer,
+  plaats,
+  onClose,
+  onGewijzigd,
+  onGereed,
+}) {
+  // De geplande bewerkingsplaats (de regel in de planning waarop je klikte)
+  const gepland = machines.find((m) => m.plaats === plaats);
+
   const [lopend, setLopend] = useState([]);
   const [operator, setOperator] = useState("");
-  const [machine, setMachine] = useState("");
+  const [machine, setMachine] = useState(gepland ? plaats : "");
+  const [startTijd, setStartTijd] = useState(lokaalNu());
   const [namen, setNamen] = useState([]);
   const [vraagVoor, setVraagVoor] = useState(null);
+  const [onbemand, setOnbemand] = useState(false);
+  const [onbemandUren, setOnbemandUren] = useState("");
   const [melding, setMelding] = useState("");
   const [bezig, setBezig] = useState(false);
 
@@ -41,6 +77,7 @@ export default function OrderActie({ productieordernr, artikelnummer, onClose, o
       .from("order_starts")
       .select("*")
       .eq("productieordernr", String(productieordernr))
+      .eq("bewerkingsplaats", String(plaats))
       .is("gestopt_op", null);
     setLopend(data || []);
   }
@@ -56,21 +93,32 @@ export default function OrderActie({ productieordernr, artikelnummer, onClose, o
       setNamen([...lijst].sort());
     }
     laadNamen();
-  }, [productieordernr]);
+  }, [productieordernr, plaats]);
 
   async function start() {
     setMelding("");
     if (!operator.trim()) return setMelding("Vul de naam van de operator in.");
     if (!machine) return setMelding("Kies een machine.");
+
+    const gekozenTijd = new Date(startTijd);
+    if (!startTijd || isNaN(gekozenTijd.getTime())) {
+      return setMelding("Vul een geldige starttijd in.");
+    }
+    if (gekozenTijd.getTime() > Date.now() + 60000) {
+      return setMelding("De starttijd mag niet in de toekomst liggen.");
+    }
+
     const gekozen = machines.find((m) => m.plaats === machine);
 
     setBezig(true);
     const { error } = await supabase.from("order_starts").insert({
       productieordernr: String(productieordernr),
       artikelnummer: String(artikelnummer),
+      bewerkingsplaats: String(plaats),
       machine: gekozen.plaats,
       machinegroep: groepNamen[gekozen.groep],
       operator: operator.trim(),
+      gestart_op: gekozenTijd.toISOString(),
     });
     setBezig(false);
 
@@ -82,23 +130,44 @@ export default function OrderActie({ productieordernr, artikelnummer, onClose, o
       }
       return;
     }
-    setMachine("");
+    setStartTijd(lokaalNu());
     await laad();
     if (onGewijzigd) onGewijzigd();
   }
 
+  function openStop(run) {
+    setVraagVoor(run.id);
+    setOnbemand(false);
+    setOnbemandUren("");
+    setMelding("");
+  }
+
   async function stop(run, gereed) {
     setMelding("");
+
+    let uren = null;
+    if (onbemand) {
+      uren = Number(String(onbemandUren).trim().replace(",", "."));
+      if (!(uren > 0) || uren > 168) {
+        setMelding("Vul het aantal uren in dat de machine onbemand is gelopen, bijvoorbeeld 6 of 6,5.");
+        return;
+      }
+    }
+
     setBezig(true);
     const { data, error } = await supabase
       .from("order_starts")
-      .update({ gestopt_op: new Date().toISOString() })
+      .update({
+        gestopt_op: new Date().toISOString(),
+        onbemand: onbemand,
+        onbemand_uren: uren,
+      })
       .eq("id", run.id)
       .select();
     setBezig(false);
 
     if (error || !data || data.length === 0) {
-      setMelding("Stoppen is niet gelukt. Probeer het opnieuw.");
+      setMelding("Stoppen is niet gelukt: " + (error ? error.message : "geen regel gewijzigd"));
       return;
     }
     setVraagVoor(null);
@@ -140,6 +209,7 @@ export default function OrderActie({ productieordernr, artikelnummer, onClose, o
           <div>
             <div style={{ fontSize: "13px", color: "#555" }}>Productieorder {productieordernr}</div>
             <div style={{ fontSize: "18px", fontWeight: "bold" }}>Artikel {artikelnummer}</div>
+            <div style={{ fontSize: "13px", color: "#555" }}>Gepland op: {plaats}</div>
           </div>
           <button onClick={onClose} style={{ fontSize: "20px", border: "none", background: "none", cursor: "pointer" }}>
             ✕
@@ -169,6 +239,24 @@ export default function OrderActie({ productieordernr, artikelnummer, onClose, o
 
                 {vraagVoor === run.id ? (
                   <div>
+                    <label style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
+                      <input type="checkbox" checked={onbemand} onChange={(e) => setOnbemand(e.target.checked)} />
+                      <span>Onbemand gelopen</span>
+                    </label>
+                    {onbemand && (
+                      <div style={{ marginBottom: "10px" }}>
+                        <label style={label}>Aantal uren onbemand gelopen</label>
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          value={onbemandUren}
+                          onChange={(e) => setOnbemandUren(e.target.value)}
+                          placeholder="bijv. 6 of 6,5"
+                          style={veld}
+                        />
+                      </div>
+                    )}
+
                     <div style={{ fontWeight: "bold", marginBottom: "8px" }}>Is de order gereed?</div>
                     <div style={{ display: "flex", gap: "8px" }}>
                       <button
@@ -192,7 +280,7 @@ export default function OrderActie({ productieordernr, artikelnummer, onClose, o
                   </div>
                 ) : (
                   <button
-                    onClick={() => setVraagVoor(run.id)}
+                    onClick={() => openStop(run)}
                     style={{ width: "100%", padding: "10px", cursor: "pointer", background: "#b71c1c", color: "#fff", border: "none", borderRadius: "6px" }}
                   >
                     Stop order
@@ -221,8 +309,8 @@ export default function OrderActie({ productieordernr, artikelnummer, onClose, o
             style={{ ...veld, marginBottom: "10px" }}
           />
 
-          <label style={label}>Machine</label>
-          <select value={machine} onChange={(e) => setMachine(e.target.value)} style={{ ...veld, marginBottom: "12px" }}>
+          <label style={label}>Machine waarop je draait (wissel je van machine? kies de andere)</label>
+          <select value={machine} onChange={(e) => setMachine(e.target.value)} style={{ ...veld, marginBottom: "10px" }}>
             <option value="">Kies een machine</option>
             {machines.map((m) => (
               <option key={m.plaats} value={m.plaats}>
@@ -230,6 +318,29 @@ export default function OrderActie({ productieordernr, artikelnummer, onClose, o
               </option>
             ))}
           </select>
+
+          <label style={label}>Starttijd (vergeten te starten? vul de tijd zelf in of schuif hem op)</label>
+          <input
+            type="datetime-local"
+            value={startTijd}
+            max={lokaalNu()}
+            onChange={(e) => setStartTijd(e.target.value)}
+            style={{ ...veld, marginBottom: "8px" }}
+          />
+          <div style={{ display: "flex", gap: "6px", marginBottom: "12px" }}>
+            <button onClick={() => setStartTijd(verschuif(startTijd, -60))} style={knop}>
+              −1 uur
+            </button>
+            <button onClick={() => setStartTijd(verschuif(startTijd, -5))} style={knop}>
+              −5 min
+            </button>
+            <button onClick={() => setStartTijd(verschuif(startTijd, 5))} style={knop}>
+              +5 min
+            </button>
+            <button onClick={() => setStartTijd(lokaalNu())} style={knop}>
+              Nu
+            </button>
+          </div>
 
           <button
             onClick={start}

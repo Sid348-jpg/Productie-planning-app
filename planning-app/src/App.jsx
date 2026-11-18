@@ -11,6 +11,7 @@ import Planning from "./pages/Planning";
 import Beheer from "./pages/Beheer";
 import Benutting from "./pages/Benutting";
 import Afkeur from "./pages/Afkeur";
+import PceOverzicht from "./pages/PceOverzicht";
 import Login from "./pages/Login";
 import { supabase } from "./supabaseClient";
 import { laadGegevens, bewaarGegevens } from "./utils/opslag";
@@ -218,7 +219,12 @@ function App() {
         fontFamily: "Arial, sans-serif",
       }}
     >
-      <Menu setPagina={setPagina} isBeheerder={isBeheerder} />
+      <Menu
+  setPagina={setPagina}
+  isBeheerder={isBeheerder}
+  email={sessie?.user?.email}
+  onUitloggen={() => supabase.auth.signOut()}
+/>
 
       <div
         style={{
@@ -226,7 +232,7 @@ function App() {
           padding: "20px",
         }}
       >
-        <div style={{ textAlign: "right" }}>
+        <div style={{ display: "none" }}>
           <button
             onClick={() => supabase.auth.signOut()}
             style={{
@@ -246,6 +252,7 @@ function App() {
           {pagina === "planning" && "Productieplanning"}
           {pagina === "benutting" && "Benutting capaciteit"}
           {pagina === "afkeur" && "Afkeur"}
+          {pagina === "pce" && "PCE"}
           {pagina === "tekorten" && "Tekorten"}
           {pagina === "beheer" && "Beheer"}
         </h1>
@@ -269,6 +276,8 @@ function App() {
         {pagina === "benutting" && <Benutting geproduceerd={geproduceerd} />}
 
         {pagina === "afkeur" && <Afkeur voorraadArtikelen={voorraadArtikelen} />}
+
+        {pagina === "pce" && <PceOverzicht isBeheerder={isBeheerder} />}
 
         {pagina === "beheer" && (
           <Beheer

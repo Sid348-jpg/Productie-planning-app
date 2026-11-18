@@ -56,30 +56,55 @@ const HUIDIGE_WEEK_KLEUR = "#ffe58a";
 const ACHTERSTAND_KLEUR = "#ff9a9a";
 const WEEK_BREEDTE = 44;
 const DIKKE_LIJN = "3px solid #333";
+const STATUS_TEKST = { productie: "In productie", gestopt: "Gestopt", gereed: "Order Gereed" };
+const STATUS_PIL = {
+  productie: { achter: "#dcf2dd", tekst: "#1b6b25" },
+  gestopt: { achter: "#fde8cc", tekst: "#a35a00" },
+  gereed: { achter: "#dbe8fb", tekst: "#1a4fa3" },
+};
 
 export function Planning({ bewerkingen = [], isBeheerder = false }) {
   const [gekozenGroep, setGekozenGroep] = useState("alle");
   const [afkeurVoor, setAfkeurVoor] = useState(null);
   const [beheerVoor, setBeheerVoor] = useState(null);
   const [actieVoor, setActieVoor] = useState(null);
-  const [gereedOrders, setGereedOrders] = useState([]);
+  const [gereedBewerkingen, setGereedBewerkingen] = useState([]);
+  const [starts, setStarts] = useState([]);
 
-async function laadGereed() {
-  const { data } = await supabase
-    .from("afkeur_registraties")
-    .select("productieordernr")
-    .eq("gereed", true);
-  setGereedOrders((data || []).map((r) => r.productieordernr));
-}
+  // Gereedgemeld per geplande bewerking: productieordernummer + bewerkingsplaats
+  async function laadGereed() {
+    const { data } = await supabase
+      .from("afkeur_registraties")
+      .select("productieordernr, bewerkingsplaats")
+      .eq("gereed", true);
+    setGereedBewerkingen((data || []).map((r) => r.productieordernr + "|" + r.bewerkingsplaats));
+  }
 
-useEffect(() => {
-  laadGereed();
-}, []);
+  async function laadStarts() {
+    const { data } = await supabase
+      .from("order_starts")
+      .select("productieordernr, bewerkingsplaats, gestopt_op");
+    setStarts(data || []);
+  }
+
+  useEffect(() => {
+    laadGereed();
+    laadStarts();
+  }, []);
+
+  function statusVan(productienummer, plaats) {
+    const nr = String(productienummer);
+    if (gereedBewerkingen.includes(nr + "|" + plaats)) return "gereed";
+    const regels = starts.filter((s) => s.productieordernr === nr && s.bewerkingsplaats === plaats);
+    if (regels.some((s) => !s.gestopt_op)) return "productie";
+    if (regels.length > 0) return "gestopt";
+    return "";
+  }
 
   // De actuele week en de 3 weken erna
   const vandaag = new Date();
   const huidigeWeek = weekSleutel(vandaag);
-  const komendeWeken = [0, 1, 2, 3].map((i) =>
+    const komendeWeken = [0, 1, 2, 3, 4, 5, 6].map((i) =>
     weekSleutel(
       new Date(vandaag.getFullYear(), vandaag.getMonth(), vandaag.getDate() + 7 * i)
     )
@@ -252,8 +277,8 @@ useEffect(() => {
         {zichtbaar.length} bewerkingen, samen {totaalUren.toFixed(1)} uur
       </p>
 
-      <div style={{ overflowX: "auto" }}>
-        <table style={{ borderCollapse: "collapse" }}>
+      <div className="scroll-vast">
+        <table className="vaste-kop" style={{ borderCollapse: "collapse" }}>
           <thead>
             <tr>
               <th style={celStijl} title="Bewerkingsplaats">
@@ -262,6 +287,7 @@ useEffect(() => {
               <th style={celStijl}>Machine</th>
               <th style={celStijl}>Groep</th>
               <th style={celStijl}>Artikelnummer</th>
+              <th style={celStijl}>Status</th>
               <th style={celStijl}>Startdatum volgend</th>
               <th style={celStijl}>Uren</th>
               {weken.map((w) => (
@@ -277,6 +303,8 @@ useEffect(() => {
               const volgende = zichtbaar[i + 1];
               const lijn =
                 !volgende || volgende.plaats !== b.plaats ? { borderBottom: DIKKE_LIJN } : {};
+              const status = statusVan(b.productienummer, b.plaats);
+              const isGereed = status === "gereed";
               return (
                 <tr key={i}>
                   <td style={{ ...celStijl, ...lijn }}>{b.plaats}</td>
@@ -287,27 +315,51 @@ useEffect(() => {
                     {groepVan(b.plaats) || "-"}
                   </td>
                   <td
-  style={{
-    ...celStijl,
-    ...lijn,
-    cursor: "pointer",
-    color: gereedOrders.includes(String(b.productienummer)) ? "#888" : "#0b57d0",
-    textDecoration: gereedOrders.includes(String(b.productienummer))
-      ? "line-through"
-      : "underline",
-  }}
-  onClick={() => {
-  const order = { productieordernr: b.productienummer, artikel: b.artikel };
-  if (gereedOrders.includes(String(b.productienummer))) {
-    if (isBeheerder) setBeheerVoor(order);
-  } else {
-    setActieVoor(order);
-  }
-}}
-  title="Afkeur registreren"
->
-  {b.artikel}
-</td>
+                    style={{
+                      ...celStijl,
+                      ...lijn,
+                      cursor: "pointer",
+                      color: isGereed ? "#888" : "#0b57d0",
+                      textDecoration: isGereed ? "line-through" : "underline",
+                    }}
+                    onClick={() => {
+                      const order = {
+                        productieordernr: b.productienummer,
+                        artikel: b.artikel,
+                        plaats: b.plaats,
+                      };
+                      if (isGereed) {
+                        if (isBeheerder) setBeheerVoor(order);
+                      } else {
+                        setActieVoor(order);
+                      }
+                    }}
+                    title="Order starten, stoppen en afkeur registreren"
+                  >
+                    {b.artikel}
+                  </td>
+                  <td style={{ ...celStijl, ...lijn, textAlign: "center" }}>
+                    {status && (
+                      <span
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "6px",
+                          padding: "3px 10px",
+                          borderRadius: "999px",
+                          fontSize: "12px",
+                          fontWeight: 500,
+                          background: STATUS_PIL[status].achter,
+                          color: STATUS_PIL[status].tekst,
+                        }}
+                      >
+                        <span
+                          style={{ width: 7, height: 7, borderRadius: "50%", background: "currentColor" }}
+                        />
+                        {STATUS_TEKST[status]}
+                      </span>
+                    )}
+                  </td>
                   <td style={{ ...celStijl, ...lijn }}>{korteDatum(b.startVolgend)}</td>
                   <td style={{ ...celStijl, ...lijn, textAlign: "right" }}>{b.uren.toFixed(1)}</td>
                   {weken.map((w) => {
@@ -333,27 +385,20 @@ useEffect(() => {
           </tbody>
         </table>
       </div>
-            {afkeurVoor && (
-        <AfkeurPopup
-          productieordernr={afkeurVoor.productieordernr}
-          artikelnummer={afkeurVoor.artikel}
-          onClose={() => setAfkeurVoor(null)}
-          onOpgeslagen={laadGereed}
-          startMachine={afkeurVoor.machine}
-          startOperator={afkeurVoor.operator}
-          startGereed={afkeurVoor.gereed}
-        />
-      )}
+
       {actieVoor && (
         <OrderActie
           productieordernr={actieVoor.productieordernr}
           artikelnummer={actieVoor.artikel}
+          plaats={actieVoor.plaats}
           onClose={() => setActieVoor(null)}
+          onGewijzigd={laadStarts}
           onGereed={(run) => {
             setActieVoor(null);
             setAfkeurVoor({
               productieordernr: actieVoor.productieordernr,
               artikel: actieVoor.artikel,
+              plaats: actieVoor.plaats,
               machine: run.machine,
               operator: run.operator,
               gereed: true,
@@ -361,14 +406,32 @@ useEffect(() => {
           }}
         />
       )}
+
+      {afkeurVoor && (
+        <AfkeurPopup
+          productieordernr={afkeurVoor.productieordernr}
+          artikelnummer={afkeurVoor.artikel}
+          bewerkingsplaats={afkeurVoor.plaats}
+          onClose={() => setAfkeurVoor(null)}
+          onOpgeslagen={() => {
+            laadGereed();
+            laadStarts();
+          }}
+          startMachine={afkeurVoor.machine}
+          startOperator={afkeurVoor.operator}
+          startGereed={afkeurVoor.gereed}
+        />
+      )}
+
       {beheerVoor && (
-  <GereedBeheer
-    productieordernr={beheerVoor.productieordernr}
-    artikelnummer={beheerVoor.artikel}
-    onClose={() => setBeheerVoor(null)}
-    onWijziging={laadGereed}
-  />
-)}
+        <GereedBeheer
+          productieordernr={beheerVoor.productieordernr}
+          artikelnummer={beheerVoor.artikel}
+          bewerkingsplaats={beheerVoor.plaats}
+          onClose={() => setBeheerVoor(null)}
+          onWijziging={laadGereed}
+        />
+      )}
     </div>
   );
 }

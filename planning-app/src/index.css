@@ -108,3 +108,16 @@ code {
   padding: 4px 8px;
   background: var(--code-bg);
 }
+/* Vaste kolomkoppen: de tabel scrolt in een eigen venster */
+.scroll-vast {
+  overflow: auto;
+  max-height: 75vh;
+}
+
+.vaste-kop thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #f3f4f6;
+  box-shadow: 0 1px 0 #999;
+}

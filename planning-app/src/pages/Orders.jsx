@@ -71,8 +71,8 @@ function Orders({ orders, voorraadArtikelen }) {
         leverdatum
       </p>
 
-      <div style={{ overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <div className="scroll-vast">
+                <table className="vaste-kop" style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr>
               <th style={thStyle}>Ordernummer</th>

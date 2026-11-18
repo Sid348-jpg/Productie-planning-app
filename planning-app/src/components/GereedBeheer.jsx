@@ -1,17 +1,26 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
 
-export default function GereedBeheer({ productieordernr, artikelnummer, onClose, onWijziging }) {
+export default function GereedBeheer({
+  productieordernr,
+  artikelnummer,
+  bewerkingsplaats,
+  onClose,
+  onWijziging,
+}) {
   const [registraties, setRegistraties] = useState([]);
   const [melding, setMelding] = useState("");
   const [laden, setLaden] = useState(true);
 
   async function laad() {
-    const { data, error } = await supabase
+    let vraag = supabase
       .from("afkeur_registraties")
       .select("*")
-      .eq("productieordernr", String(productieordernr))
-      .order("aangemaakt_op", { ascending: true });
+      .eq("productieordernr", String(productieordernr));
+    if (bewerkingsplaats) {
+      vraag = vraag.eq("bewerkingsplaats", String(bewerkingsplaats));
+    }
+    const { data, error } = await vraag.order("aangemaakt_op", { ascending: true });
     if (error) {
       setMelding("Laden mislukt: " + error.message);
     } else {
@@ -22,7 +31,7 @@ export default function GereedBeheer({ productieordernr, artikelnummer, onClose,
 
   useEffect(() => {
     laad();
-  }, [productieordernr]);
+  }, [productieordernr, bewerkingsplaats]);
 
   async function zetGereed(registratie, waarde) {
     setMelding("");
@@ -85,6 +94,9 @@ export default function GereedBeheer({ productieordernr, artikelnummer, onClose,
           <div>
             <div style={{ fontSize: "13px", color: "#555" }}>Beheer: productieorder {productieordernr}</div>
             <div style={{ fontSize: "18px", fontWeight: "bold" }}>Artikel {artikelnummer}</div>
+            {bewerkingsplaats && (
+              <div style={{ fontSize: "13px", color: "#555" }}>Bewerking: {bewerkingsplaats}</div>
+            )}
           </div>
           <button onClick={onClose} style={{ fontSize: "20px", border: "none", background: "none", cursor: "pointer" }}>
             ✕
@@ -92,7 +104,7 @@ export default function GereedBeheer({ productieordernr, artikelnummer, onClose,
         </div>
 
         {laden && <div>Laden...</div>}
-        {!laden && registraties.length === 0 && <div>Geen registraties voor deze order.</div>}
+        {!laden && registraties.length === 0 && <div>Geen registraties voor deze bewerking.</div>}
 
         {registraties.map((r) => (
           <div
